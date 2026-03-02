@@ -4,7 +4,13 @@ export function loadChats() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
-    return JSON.parse(raw)
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    // Validate each chat has the expected shape
+    return parsed.filter(
+      (c) =>
+        c && typeof c.id === 'string' && Array.isArray(c.messages)
+    )
   } catch {
     return []
   }

@@ -1,3 +1,6 @@
+// NOTE: In production, API calls should go through a backend server to avoid
+// exposing the API key. The VITE_ prefix makes env vars client-visible.
+// The /api/claude proxy in vite.config.js is dev-only.
 const CLAUDE_API_URL = '/api/claude/v1/messages'
 
 const SYSTEM_PROMPT = `You are an email drafting assistant. Given a contact and an outreach context, write a personalized cold email.
@@ -21,7 +24,7 @@ export async function generateEmailDraft(contact, outreachContext) {
 
   if (!apiKey) {
     // Demo mode: return a realistic mock draft
-    await fakDelay(400 + Math.random() * 800)
+    await fakeDelay(400 + Math.random() * 800)
     return generateMockDraft(contact, outreachContext)
   }
 
@@ -52,12 +55,24 @@ Write a personalized cold email for this contact.`
   })
 
   if (!response.ok) {
-    throw new Error(`Claude API error: ${response.status}`)
+    throw new Error('Email drafting service is temporarily unavailable. Please try again.')
   }
 
   const data = await response.json()
-  const text = data.content[0].text
-  return JSON.parse(text)
+  const text = data?.content?.[0]?.text
+  if (!text) {
+    throw new Error('Received an unexpected response from the drafting service.')
+  }
+
+  try {
+    const parsed = JSON.parse(text)
+    if (typeof parsed.subject !== 'string' || typeof parsed.body !== 'string') {
+      throw new Error('Invalid email draft format received.')
+    }
+    return { subject: parsed.subject, body: parsed.body }
+  } catch {
+    throw new Error('Failed to parse the email draft. Please try again.')
+  }
 }
 
 export async function generateAllDrafts(contacts, outreachContext, onProgress) {
@@ -82,7 +97,7 @@ export async function generateAllDrafts(contacts, outreachContext, onProgress) {
 
 // --- Demo / mock helpers ---
 
-function fakDelay(ms) {
+function fakeDelay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
