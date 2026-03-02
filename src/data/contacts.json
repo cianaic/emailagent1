@@ -1,0 +1,152 @@
+[
+  {
+    "id": "c1",
+    "name": "Sarah Chen",
+    "email": "sarah.chen@techforward.io",
+    "role": "VP of Engineering",
+    "company": "TechForward",
+    "location": "San Francisco, CA",
+    "tags": ["engineering", "leadership", "saas", "platform", "infrastructure"],
+    "bio": "Leads a 120-person engineering org building developer tools. Previously at Stripe."
+  },
+  {
+    "id": "c2",
+    "name": "Marcus Johnson",
+    "email": "marcus.j@revscale.com",
+    "role": "Head of Growth",
+    "company": "RevScale",
+    "location": "New York, NY",
+    "tags": ["growth", "marketing", "b2b", "saas", "revenue"],
+    "bio": "Scaled RevScale from $2M to $20M ARR. Focused on PLG and outbound strategies."
+  },
+  {
+    "id": "c3",
+    "name": "Emily Rodriguez",
+    "email": "emily@brighthealthco.com",
+    "role": "Chief Medical Officer",
+    "company": "BrightHealth Co",
+    "location": "Austin, TX",
+    "tags": ["healthcare", "medical", "digital health", "telehealth", "leadership"],
+    "bio": "Board-certified physician driving digital health transformation at BrightHealth."
+  },
+  {
+    "id": "c4",
+    "name": "David Kim",
+    "email": "dkim@novafinancial.com",
+    "role": "Director of Product",
+    "company": "Nova Financial",
+    "location": "Chicago, IL",
+    "tags": ["fintech", "product", "banking", "payments", "compliance"],
+    "bio": "Building next-gen banking products. Expert in regulatory compliance and payments."
+  },
+  {
+    "id": "c5",
+    "name": "Aisha Patel",
+    "email": "aisha@greenleaf.energy",
+    "role": "CEO",
+    "company": "GreenLeaf Energy",
+    "location": "Denver, CO",
+    "tags": ["cleantech", "energy", "sustainability", "climate", "leadership"],
+    "bio": "Founded GreenLeaf to accelerate commercial solar adoption. Forbes 30 Under 30."
+  },
+  {
+    "id": "c6",
+    "name": "James O'Brien",
+    "email": "jobrien@cloudmatrix.dev",
+    "role": "CTO",
+    "company": "CloudMatrix",
+    "location": "Seattle, WA",
+    "tags": ["cloud", "infrastructure", "devops", "engineering", "platform"],
+    "bio": "Ex-AWS principal engineer. Building multi-cloud orchestration tools."
+  },
+  {
+    "id": "c7",
+    "name": "Lisa Wang",
+    "email": "lisa.wang@eduspark.com",
+    "role": "Head of Partnerships",
+    "company": "EduSpark",
+    "location": "Boston, MA",
+    "tags": ["edtech", "partnerships", "education", "enterprise", "sales"],
+    "bio": "Drives strategic partnerships for K-12 AI tutoring platform. 50+ school districts."
+  },
+  {
+    "id": "c8",
+    "name": "Carlos Mendoza",
+    "email": "carlos@swiftlogistics.co",
+    "role": "VP of Operations",
+    "company": "SwiftLogistics",
+    "location": "Miami, FL",
+    "tags": ["logistics", "operations", "supply chain", "automation", "enterprise"],
+    "bio": "Optimizing last-mile delivery with AI routing. Serves 200+ enterprise clients."
+  },
+  {
+    "id": "c9",
+    "name": "Rachel Foster",
+    "email": "rachel.f@databridgeai.com",
+    "role": "Head of Data Science",
+    "company": "DataBridge AI",
+    "location": "San Francisco, CA",
+    "tags": ["ai", "machine learning", "data science", "analytics", "engineering"],
+    "bio": "PhD in ML from Stanford. Leading a team building enterprise data pipelines."
+  },
+  {
+    "id": "c10",
+    "name": "Tom Nakamura",
+    "email": "tom@retailnext.shop",
+    "role": "Director of Marketing",
+    "company": "RetailNext",
+    "location": "Los Angeles, CA",
+    "tags": ["retail", "ecommerce", "marketing", "d2c", "consumer"],
+    "bio": "Runs omnichannel marketing for a fast-growing D2C brand platform."
+  },
+  {
+    "id": "c11",
+    "name": "Priya Sharma",
+    "email": "priya@securestack.io",
+    "role": "VP of Security",
+    "company": "SecureStack",
+    "location": "Washington, DC",
+    "tags": ["cybersecurity", "security", "compliance", "enterprise", "saas"],
+    "bio": "Building zero-trust security platform. Former CISO at a Fortune 500 company."
+  },
+  {
+    "id": "c12",
+    "name": "Alex Thompson",
+    "email": "alex.t@creativeforge.co",
+    "role": "Founder & CEO",
+    "company": "CreativeForge",
+    "location": "Portland, OR",
+    "tags": ["design", "creative", "agency", "branding", "startup"],
+    "bio": "Design agency turned SaaS. Helping brands build visual identity at scale."
+  },
+  {
+    "id": "c13",
+    "name": "Nina Volkov",
+    "email": "nina@pharmalink.bio",
+    "role": "Head of Business Development",
+    "company": "PharmaLink Bio",
+    "location": "Cambridge, MA",
+    "tags": ["biotech", "pharma", "healthcare", "partnerships", "sales"],
+    "bio": "Driving pharma partnerships for an AI drug discovery platform."
+  },
+  {
+    "id": "c14",
+    "name": "Jordan Hayes",
+    "email": "jordan@proptech.build",
+    "role": "Chief Revenue Officer",
+    "company": "PropTech Build",
+    "location": "Nashville, TN",
+    "tags": ["real estate", "proptech", "sales", "revenue", "enterprise"],
+    "bio": "Scaling commercial real estate analytics platform across US markets."
+  },
+  {
+    "id": "c15",
+    "name": "Michelle Lee",
+    "email": "michelle@fitpulse.app",
+    "role": "Head of Product",
+    "company": "FitPulse",
+    "location": "Austin, TX",
+    "tags": ["fitness", "health", "consumer", "mobile", "product"],
+    "bio": "Leading product for a wellness app with 2M+ active users. Ex-Peloton."
+  }
+]
