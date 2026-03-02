@@ -1,12 +1,19 @@
 import { useEffect, useRef } from 'react'
 import MessageBubble from './MessageBubble'
+import EmailDraftList from './EmailDraftList'
 
-function MessageList({ messages }) {
+function MessageList({
+  messages,
+  emailDrafts,
+  onUpdateDraft,
+  onConfirmDraft,
+  onSendAll,
+}) {
   const bottomRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, emailDrafts])
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6">
@@ -20,9 +27,19 @@ function MessageList({ messages }) {
             </p>
           </div>
         )}
-        {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
-        ))}
+        {messages.map((msg) =>
+          msg.type === 'email-drafts' ? (
+            <EmailDraftList
+              key={msg.id}
+              drafts={emailDrafts}
+              onUpdateDraft={onUpdateDraft}
+              onConfirmDraft={onConfirmDraft}
+              onSendAll={onSendAll}
+            />
+          ) : (
+            <MessageBubble key={msg.id} message={msg} />
+          ),
+        )}
         <div ref={bottomRef} />
       </div>
     </div>
