@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import MessageBubble from './MessageBubble'
 import ThinkingIndicator from './ThinkingIndicator'
+import ContactListMessage from './ContactListMessage'
 
-function MessageList({ messages, thinking }) {
+function MessageList({ messages, thinking, onContinueContacts }) {
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -21,9 +22,20 @@ function MessageList({ messages, thinking }) {
             </p>
           </div>
         )}
-        {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
-        ))}
+        {messages.map((msg) => {
+          if (msg.type === 'contacts') {
+            return (
+              <div key={msg.id} className="flex flex-col gap-2">
+                <MessageBubble message={msg} />
+                <ContactListMessage
+                  contacts={msg.contacts}
+                  onContinue={msg.confirmed ? undefined : onContinueContacts}
+                />
+              </div>
+            )
+          }
+          return <MessageBubble key={msg.id} message={msg} />
+        })}
         {thinking && <ThinkingIndicator />}
         <div ref={bottomRef} />
       </div>

@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect } from 'react'
 import MessageList from '../components/MessageList'
 import ChatInput from '../components/ChatInput'
 import ChatSidebar from '../components/ChatSidebar'
-import ThinkingIndicator from '../components/ThinkingIndicator'
 import { loadChats, saveChats, createChat, deriveTitle } from '../lib/chatStore'
+import { searchContacts } from '../lib/contacts'
 
 function Chat() {
   const [chats, setChats] = useState(() => {
@@ -49,26 +49,90 @@ function Chat() {
 
       setThinking(true)
 
-      // Mock agent reply (to be replaced with real AI in Sprint 4)
+      // Search contacts based on user input
       setTimeout(() => {
-        const agentMsg = {
-          id: crypto.randomUUID(),
-          role: 'agent',
-          content: `Got it! You said: **"${text}"**\n\nI'll help you with that once I'm fully connected.`,
-          timestamp: Date.now(),
+        const results = searchContacts(text)
+
+        if (results.length > 0) {
+          const contactsMsg = {
+            id: crypto.randomUUID(),
+            role: 'agent',
+            type: 'contacts',
+            content: `I found **${results.length} contact${results.length !== 1 ? 's' : ''}** matching your request. Review them below — you can remove anyone who isn't a good fit, then continue.`,
+            contacts: results,
+            confirmed: false,
+            timestamp: Date.now(),
+          }
+          setChats((prev) =>
+            prev.map((chat) => {
+              if (chat.id !== activeChatId) return chat
+              return {
+                ...chat,
+                messages: [...chat.messages, contactsMsg],
+                updatedAt: Date.now(),
+              }
+            })
+          )
+        } else {
+          const agentMsg = {
+            id: crypto.randomUUID(),
+            role: 'agent',
+            content: `I couldn't find any contacts matching **"${text}"**. Try searching by role, company, industry, or location — for example, "engineering leaders in San Francisco" or "healthcare startups".`,
+            timestamp: Date.now(),
+          }
+          setChats((prev) =>
+            prev.map((chat) => {
+              if (chat.id !== activeChatId) return chat
+              return {
+                ...chat,
+                messages: [...chat.messages, agentMsg],
+                updatedAt: Date.now(),
+              }
+            })
+          )
         }
-        setChats((prev) =>
-          prev.map((chat) => {
-            if (chat.id !== activeChatId) return chat
-            return {
-              ...chat,
-              messages: [...chat.messages, agentMsg],
-              updatedAt: Date.now(),
-            }
-          })
-        )
+
         setThinking(false)
       }, 600)
+    },
+    [activeChatId]
+  )
+
+  const handleContinueContacts = useCallback(
+    (keptContacts) => {
+      // Mark the contacts message as confirmed in the active chat
+      setChats((prev) =>
+        prev.map((chat) => {
+          if (chat.id !== activeChatId) return chat
+          return {
+            ...chat,
+            messages: chat.messages.map((msg) =>
+              msg.type === 'contacts' && !msg.confirmed
+                ? { ...msg, confirmed: true }
+                : msg
+            ),
+            updatedAt: Date.now(),
+          }
+        })
+      )
+
+      // Agent acknowledges the selection
+      const confirmMsg = {
+        id: crypto.randomUUID(),
+        role: 'agent',
+        content: `Great — continuing with **${keptContacts.length} contact${keptContacts.length !== 1 ? 's' : ''}**: ${keptContacts.map((c) => c.name).join(', ')}.\n\nI'll start drafting personalized emails for each of them.`,
+        timestamp: Date.now(),
+      }
+      setChats((prev) =>
+        prev.map((chat) => {
+          if (chat.id !== activeChatId) return chat
+          return {
+            ...chat,
+            messages: [...chat.messages, confirmMsg],
+            updatedAt: Date.now(),
+          }
+        })
+      )
     },
     [activeChatId]
   )
@@ -128,7 +192,11 @@ function Chat() {
             <h1 className="text-lg font-semibold text-text">Email Agent</h1>
           </div>
         </header>
-        <MessageList messages={activeChat.messages} thinking={thinking} />
+        <MessageList
+          messages={activeChat.messages}
+          thinking={thinking}
+          onContinueContacts={handleContinueContacts}
+        />
         <ChatInput onSend={handleSend} disabled={thinking} />
       </div>
     </div>
