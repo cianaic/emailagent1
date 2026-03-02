@@ -2,13 +2,22 @@ import { useEffect, useRef } from 'react'
 import MessageBubble from './MessageBubble'
 import ThinkingIndicator from './ThinkingIndicator'
 import ContactListMessage from './ContactListMessage'
+import EmailDraftList from './EmailDraftList'
 
-function MessageList({ messages, thinking, onContinueContacts }) {
+function MessageList({
+  messages,
+  thinking,
+  onContinueContacts,
+  emailDrafts,
+  onUpdateDraft,
+  onConfirmDraft,
+  onSendAll,
+}) {
   const bottomRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, thinking])
+  }, [messages, thinking, emailDrafts])
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6">
@@ -32,6 +41,17 @@ function MessageList({ messages, thinking, onContinueContacts }) {
                   onContinue={msg.confirmed ? undefined : onContinueContacts}
                 />
               </div>
+            )
+          }
+          if (msg.type === 'email-drafts') {
+            return (
+              <EmailDraftList
+                key={msg.id}
+                drafts={emailDrafts}
+                onUpdateDraft={onUpdateDraft}
+                onConfirmDraft={onConfirmDraft}
+                onSendAll={onSendAll}
+              />
             )
           }
           return <MessageBubble key={msg.id} message={msg} />

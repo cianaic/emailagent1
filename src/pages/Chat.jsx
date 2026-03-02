@@ -4,6 +4,7 @@ import ChatInput from '../components/ChatInput'
 import ChatSidebar from '../components/ChatSidebar'
 import { loadChats, saveChats, createChat, deriveTitle } from '../lib/chatStore'
 import { searchContacts } from '../lib/contacts'
+import { generateAllDrafts } from '../lib/claude'
 
 function Chat() {
   const [chats, setChats] = useState(() => {
@@ -17,6 +18,8 @@ function Chat() {
   })
   const [thinking, setThinking] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [emailDrafts, setEmailDrafts] = useState([])
+  const [isDrafting, setIsDrafting] = useState(false)
 
   // Persist chats to LocalStorage whenever they change
   useEffect(() => {
@@ -24,6 +27,54 @@ function Chat() {
   }, [chats])
 
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0]
+
+  // Helper to add an agent message to the active chat
+  const addAgentMessage = useCallback(
+    (content, extra = {}) => {
+      const agentMsg = {
+        id: crypto.randomUUID(),
+        role: 'agent',
+        content,
+        timestamp: Date.now(),
+        ...extra,
+      }
+      setChats((prev) =>
+        prev.map((chat) => {
+          if (chat.id !== activeChatId) return chat
+          return {
+            ...chat,
+            messages: [...chat.messages, agentMsg],
+            updatedAt: Date.now(),
+          }
+        })
+      )
+    },
+    [activeChatId]
+  )
+
+  // --- Email draft handlers (Sprint 4) ---
+
+  const handleUpdateDraft = useCallback((draftId, updates) => {
+    setEmailDrafts((prev) =>
+      prev.map((d) => (d.id === draftId ? { ...d, ...updates } : d))
+    )
+  }, [])
+
+  const handleConfirmDraft = useCallback((draftId) => {
+    setEmailDrafts((prev) =>
+      prev.map((d) =>
+        d.id === draftId ? { ...d, status: 'confirmed' } : d
+      )
+    )
+  }, [])
+
+  const handleSendAll = useCallback(() => {
+    addAgentMessage(
+      "All emails are ready to send! Gmail integration will be available soon. For now, your confirmed drafts are saved and ready to go."
+    )
+  }, [addAgentMessage])
+
+  // --- Main send handler ---
 
   const handleSend = useCallback(
     (text) => {
@@ -49,7 +100,7 @@ function Chat() {
 
       setThinking(true)
 
-      // Search contacts based on user input
+      // Search contacts based on user input (Sprint 3)
       setTimeout(() => {
         const results = searchContacts(text)
 
@@ -74,33 +125,22 @@ function Chat() {
             })
           )
         } else {
-          const agentMsg = {
-            id: crypto.randomUUID(),
-            role: 'agent',
-            content: `I couldn't find any contacts matching **"${text}"**. Try searching by role, company, industry, or location — for example, "engineering leaders in San Francisco" or "healthcare startups".`,
-            timestamp: Date.now(),
-          }
-          setChats((prev) =>
-            prev.map((chat) => {
-              if (chat.id !== activeChatId) return chat
-              return {
-                ...chat,
-                messages: [...chat.messages, agentMsg],
-                updatedAt: Date.now(),
-              }
-            })
+          addAgentMessage(
+            `I couldn't find any contacts matching **"${text}"**. Try searching by role, company, industry, or location — for example, "engineering leaders in San Francisco" or "healthcare startups".`
           )
         }
 
         setThinking(false)
       }, 600)
     },
-    [activeChatId]
+    [activeChatId, addAgentMessage]
   )
 
+  // --- Contact confirmation → email drafting (Sprint 3 → Sprint 4) ---
+
   const handleContinueContacts = useCallback(
-    (keptContacts) => {
-      // Mark the contacts message as confirmed in the active chat
+    async (keptContacts) => {
+      // Mark the contacts message as confirmed
       setChats((prev) =>
         prev.map((chat) => {
           if (chat.id !== activeChatId) return chat
@@ -116,31 +156,49 @@ function Chat() {
         })
       )
 
-      // Agent acknowledges the selection
-      const confirmMsg = {
-        id: crypto.randomUUID(),
-        role: 'agent',
-        content: `Great — continuing with **${keptContacts.length} contact${keptContacts.length !== 1 ? 's' : ''}**: ${keptContacts.map((c) => c.name).join(', ')}.\n\nI'll start drafting personalized emails for each of them.`,
-        timestamp: Date.now(),
-      }
-      setChats((prev) =>
-        prev.map((chat) => {
-          if (chat.id !== activeChatId) return chat
-          return {
-            ...chat,
-            messages: [...chat.messages, confirmMsg],
-            updatedAt: Date.now(),
-          }
-        })
+      // Acknowledge selection and start drafting
+      addAgentMessage(
+        `Great — continuing with **${keptContacts.length} contact${keptContacts.length !== 1 ? 's' : ''}**: ${keptContacts.map((c) => c.name).join(', ')}.\n\nI'll start drafting personalized emails for each of them...`
       )
+
+      setIsDrafting(true)
+      setThinking(true)
+
+      try {
+        // Get the original user query for outreach context
+        const lastUserMsg = activeChat.messages
+          .filter((m) => m.role === 'user')
+          .pop()
+        const outreachContext = lastUserMsg?.content || 'general outreach'
+
+        const drafts = await generateAllDrafts(keptContacts, outreachContext)
+        setEmailDrafts(drafts)
+
+        addAgentMessage(
+          `Here are your ${drafts.length} email drafts. Review each one — you can **edit** or **confirm** them individually. Once all are confirmed, you'll be able to send them.`
+        )
+
+        // Add the email-drafts render marker
+        addAgentMessage('', { type: 'email-drafts' })
+      } catch (err) {
+        addAgentMessage(
+          `Something went wrong while drafting emails: ${err.message}. Please try again.`
+        )
+      } finally {
+        setIsDrafting(false)
+        setThinking(false)
+      }
     },
-    [activeChatId]
+    [activeChatId, activeChat.messages, addAgentMessage]
   )
+
+  // --- Chat management handlers (Sprint 2) ---
 
   const handleNewChat = useCallback(() => {
     const chat = createChat()
     setChats((prev) => [chat, ...prev])
     setActiveChatId(chat.id)
+    setEmailDrafts([])
   }, [])
 
   const handleSelectChat = useCallback((id) => {
@@ -196,8 +254,12 @@ function Chat() {
           messages={activeChat.messages}
           thinking={thinking}
           onContinueContacts={handleContinueContacts}
+          emailDrafts={emailDrafts}
+          onUpdateDraft={handleUpdateDraft}
+          onConfirmDraft={handleConfirmDraft}
+          onSendAll={handleSendAll}
         />
-        <ChatInput onSend={handleSend} disabled={thinking} />
+        <ChatInput onSend={handleSend} disabled={thinking || isDrafting} />
       </div>
     </div>
   )
