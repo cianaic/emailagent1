@@ -23,6 +23,7 @@ function ChatInput({ onSend, disabled }) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Type your message..."
+          maxLength={2000}
           disabled={disabled}
           className="flex-1 rounded-full border border-border bg-white px-4 py-2.5 text-sm text-text placeholder:text-text-muted focus:outline-2 focus:outline-coral disabled:opacity-50"
         />
