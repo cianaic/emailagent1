@@ -2,9 +2,12 @@ import { useState, useCallback, useEffect } from 'react'
 import MessageList from '../components/MessageList'
 import ChatInput from '../components/ChatInput'
 import ChatSidebar from '../components/ChatSidebar'
+import CSVUpload from '../components/CSVUpload'
+import GmailStatus from '../components/GmailStatus'
 import { loadChats, saveChats, createChat, deriveTitle } from '../lib/chatStore'
 import { searchContacts } from '../lib/contacts'
 import { generateAllDrafts } from '../lib/claude'
+import { getGmailStatus, connectGmail, disconnectGmail, sendAllEmails } from '../lib/gmail'
 
 function Chat() {
   const [chats, setChats] = useState(() => {
@@ -20,6 +23,25 @@ function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [emailDrafts, setEmailDrafts] = useState([])
   const [isDrafting, setIsDrafting] = useState(false)
+  const [gmailStatus, setGmailStatus] = useState({ connected: false })
+  const [, setContactCount] = useState(null)
+
+  // Check Gmail connection status on mount and after OAuth redirect
+  useEffect(() => {
+    getGmailStatus().then(setGmailStatus)
+
+    // Handle OAuth redirect params
+    const params = new URLSearchParams(window.location.search)
+    const gmailConnected = params.get('gmail_connected')
+    const gmailError = params.get('gmail_error')
+
+    if (gmailConnected) {
+      setGmailStatus({ connected: true, email: gmailConnected })
+      window.history.replaceState({}, '', '/')
+    } else if (gmailError) {
+      window.history.replaceState({}, '', '/')
+    }
+  }, [])
 
   // Persist chats to LocalStorage whenever they change
   useEffect(() => {
@@ -28,7 +50,6 @@ function Chat() {
 
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0]
 
-  // Helper to add an agent message to the active chat
   const addAgentMessage = useCallback(
     (content, extra = {}) => {
       const agentMsg = {
@@ -52,7 +73,7 @@ function Chat() {
     [activeChatId]
   )
 
-  // --- Email draft handlers (Sprint 4) ---
+  // --- Email draft handlers ---
 
   const handleUpdateDraft = useCallback((draftId, updates) => {
     setEmailDrafts((prev) =>
@@ -68,11 +89,53 @@ function Chat() {
     )
   }, [])
 
-  const handleSendAll = useCallback(() => {
+  const handleSendAll = useCallback(async () => {
+    if (!gmailStatus.connected) {
+      addAgentMessage(
+        'Please connect your Gmail account first using the button in the header, then try sending again.'
+      )
+      return
+    }
+
+    const confirmedDrafts = emailDrafts.filter((d) => d.status === 'confirmed')
+    if (confirmedDrafts.length === 0) {
+      addAgentMessage('Please confirm at least one email draft before sending.')
+      return
+    }
+
+    setThinking(true)
     addAgentMessage(
-      "All emails are ready to send! Gmail integration will be available soon. For now, your confirmed drafts are saved and ready to go."
+      `Sending **${confirmedDrafts.length}** email${confirmedDrafts.length !== 1 ? 's' : ''}...`
     )
-  }, [addAgentMessage])
+
+    try {
+      const results = await sendAllEmails(confirmedDrafts)
+      const succeeded = results.filter((r) => r.success)
+      const failed = results.filter((r) => !r.success)
+
+      let summary = `Sent **${succeeded.length}/${results.length}** emails successfully.`
+      if (succeeded.length > 0) {
+        summary += `\n\nDelivered to: ${succeeded.map((r) => r.contactName).join(', ')}`
+      }
+      if (failed.length > 0) {
+        summary += `\n\nFailed: ${failed.map((r) => `${r.contactName} (${r.error})`).join(', ')}`
+      }
+      addAgentMessage(summary)
+
+      // Mark sent drafts
+      setEmailDrafts((prev) =>
+        prev.map((d) => {
+          const result = results.find((r) => r.contactName === d.contact.name)
+          if (result?.success) return { ...d, status: 'sent' }
+          return d
+        })
+      )
+    } catch (err) {
+      addAgentMessage(`Failed to send emails: ${err.message}`)
+    } finally {
+      setThinking(false)
+    }
+  }, [gmailStatus, emailDrafts, addAgentMessage])
 
   // --- Main send handler ---
 
@@ -100,7 +163,6 @@ function Chat() {
 
       setThinking(true)
 
-      // Search contacts based on user input (Sprint 3)
       setTimeout(() => {
         const results = searchContacts(text)
 
@@ -126,21 +188,20 @@ function Chat() {
           )
         } else {
           addAgentMessage(
-            `I couldn't find any contacts matching **"${text}"**. Try searching by role, company, industry, or location — for example, "engineering leaders in San Francisco" or "healthcare startups".`
+            `I couldn't find any contacts matching **"${text}"**. Try searching by role, company, industry, or location. You can also **upload a CSV** with your contacts using the button in the header.`
           )
         }
 
         setThinking(false)
-      }, 600)
+      }, 300)
     },
     [activeChatId, addAgentMessage]
   )
 
-  // --- Contact confirmation → email drafting (Sprint 3 → Sprint 4) ---
+  // --- Contact confirmation → AI email drafting ---
 
   const handleContinueContacts = useCallback(
     async (keptContacts) => {
-      // Mark the contacts message as confirmed
       setChats((prev) =>
         prev.map((chat) => {
           if (chat.id !== activeChatId) return chat
@@ -156,16 +217,14 @@ function Chat() {
         })
       )
 
-      // Acknowledge selection and start drafting
       addAgentMessage(
-        `Great — continuing with **${keptContacts.length} contact${keptContacts.length !== 1 ? 's' : ''}**: ${keptContacts.map((c) => c.name).join(', ')}.\n\nI'll start drafting personalized emails for each of them...`
+        `Great — continuing with **${keptContacts.length} contact${keptContacts.length !== 1 ? 's' : ''}**: ${keptContacts.map((c) => c.name).join(', ')}.\n\nDrafting personalized emails with AI...`
       )
 
       setIsDrafting(true)
       setThinking(true)
 
       try {
-        // Get the original user query for outreach context
         const lastUserMsg = activeChat.messages
           .filter((m) => m.role === 'user')
           .pop()
@@ -175,10 +234,9 @@ function Chat() {
         setEmailDrafts(drafts)
 
         addAgentMessage(
-          `Here are your ${drafts.length} email drafts. Review each one — you can **edit** or **confirm** them individually. Once all are confirmed, you'll be able to send them.`
+          `Here are your **${drafts.length}** AI-generated email drafts. Review and edit each one, then confirm. ${gmailStatus.connected ? 'Once confirmed, click **Send All** to deliver via Gmail.' : 'Connect your Gmail account to send them.'}`
         )
 
-        // Add the email-drafts render marker
         addAgentMessage('', { type: 'email-drafts' })
       } catch (err) {
         addAgentMessage(
@@ -189,10 +247,10 @@ function Chat() {
         setThinking(false)
       }
     },
-    [activeChatId, activeChat.messages, addAgentMessage]
+    [activeChatId, activeChat.messages, addAgentMessage, gmailStatus.connected]
   )
 
-  // --- Chat management handlers (Sprint 2) ---
+  // --- Chat management handlers ---
 
   const handleNewChat = useCallback(() => {
     const chat = createChat()
@@ -223,6 +281,11 @@ function Chat() {
     [activeChatId]
   )
 
+  const handleDisconnect = useCallback(async () => {
+    await disconnectGmail()
+    setGmailStatus({ connected: false })
+  }, [])
+
   return (
     <div className="flex h-screen">
       <ChatSidebar
@@ -248,6 +311,14 @@ function Chat() {
               </svg>
             </button>
             <h1 className="text-lg font-semibold text-text">Email Agent</h1>
+            <div className="ml-auto flex items-center gap-3">
+              <CSVUpload onUpload={setContactCount} />
+              <GmailStatus
+                gmailStatus={gmailStatus}
+                onConnect={connectGmail}
+                onDisconnect={handleDisconnect}
+              />
+            </div>
           </div>
         </header>
         <MessageList

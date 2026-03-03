@@ -19,12 +19,6 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.js'],
   },
   server: {
-    proxy: {
-      '/api/claude': {
-        target: 'https://api.anthropic.com',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/claude/, ''),
-      },
-    },
+    port: 5173,
   },
 })
