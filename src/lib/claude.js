@@ -1,77 +1,28 @@
-// NOTE: In production, API calls should go through a backend server to avoid
-// exposing the API key. The VITE_ prefix makes env vars client-visible.
-// The /api/claude proxy in vite.config.js is dev-only.
-const CLAUDE_API_URL = '/api/claude/v1/messages'
-
-const SYSTEM_PROMPT = `You are an email drafting assistant. Given a contact and an outreach context, write a personalized cold email.
-
-Respond with ONLY valid JSON in this exact format:
-{
-  "subject": "Email subject line",
-  "body": "Full email body text"
-}
-
-Guidelines:
-- Keep subject lines under 60 characters, compelling and specific
-- Open with something personalized to the contact's role/company
-- Be concise (3-4 short paragraphs max)
-- Include a clear call to action
-- Professional but warm tone
-- No placeholder brackets like [Name] — use the actual details provided`
+// Calls the server-side /api/draft endpoint which securely holds the API key.
+// Falls back to client-side mock drafts if the API is unavailable.
 
 export async function generateEmailDraft(contact, outreachContext) {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-
-  if (!apiKey) {
-    // Demo mode: return a realistic mock draft
-    await fakeDelay(400 + Math.random() * 800)
-    return generateMockDraft(contact, outreachContext)
-  }
-
-  const userPrompt = `Contact:
-- Name: ${contact.name}
-- Role: ${contact.role}
-- Company: ${contact.company}
-- Email: ${contact.email}
-${contact.notes ? `- Notes: ${contact.notes}` : ''}
-
-Outreach context: ${outreachContext}
-
-Write a personalized cold email for this contact.`
-
-  const response = await fetch(CLAUDE_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt }],
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error('Email drafting service is temporarily unavailable. Please try again.')
-  }
-
-  const data = await response.json()
-  const text = data?.content?.[0]?.text
-  if (!text) {
-    throw new Error('Received an unexpected response from the drafting service.')
-  }
-
   try {
-    const parsed = JSON.parse(text)
-    if (typeof parsed.subject !== 'string' || typeof parsed.body !== 'string') {
-      throw new Error('Invalid email draft format received.')
+    const response = await fetch('/api/draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact, outreachContext }),
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.error || 'Draft service unavailable')
     }
-    return { subject: parsed.subject, body: parsed.body }
-  } catch {
-    throw new Error('Failed to parse the email draft. Please try again.')
+
+    return await response.json()
+  } catch (err) {
+    // If /api/draft is not available (e.g. local dev without Vercel), fall back to mock
+    if (err.message === 'Failed to fetch' || err.message.includes('NetworkError')) {
+      console.warn('API route unavailable, using mock drafts')
+      await fakeDelay(400 + Math.random() * 800)
+      return generateMockDraft(contact, outreachContext)
+    }
+    throw err
   }
 }
 
@@ -95,7 +46,7 @@ export async function generateAllDrafts(contacts, outreachContext, onProgress) {
   return drafts
 }
 
-// --- Demo / mock helpers ---
+// --- Fallback mock helpers (used when API is unreachable) ---
 
 function fakeDelay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
