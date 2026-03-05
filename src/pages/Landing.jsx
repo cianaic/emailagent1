@@ -75,12 +75,12 @@ export default function Landing() {
           <svg className="w-4 h-4 text-coral" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
           </svg>
-          AI-powered Gmail & Google Calendar
+          Lightning fast email & calendar agent
         </div>
 
         <h1 className="text-5xl sm:text-6xl font-bold text-text tracking-tight leading-tight mb-6">
-          Employ an AI Chief of Staff<br />
-          <span className="text-coral">for Gmail & Gcal</span>
+          Lightning fast<br />
+          <span className="text-coral">email & calendar agent</span>
         </h1>
 
         <p className="text-lg text-text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
@@ -173,7 +173,7 @@ export default function Landing() {
 
       {/* Footer */}
       <footer className="border-t border-border px-6 py-8 text-center text-xs text-text-muted">
-        ChiefMail &middot; AI-powered Gmail & Google Calendar
+        ChiefMail &middot; Lightning fast email & calendar agent
       </footer>
     </div>
   )
