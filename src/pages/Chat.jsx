@@ -6,7 +6,7 @@ import CSVUpload from '../components/CSVUpload'
 import GmailStatus from '../components/GmailStatus'
 import { loadChats, saveChats, createChat, deriveTitle } from '../lib/chatStore'
 import { searchContacts } from '../lib/contacts'
-import { generateAllDrafts } from '../lib/claude'
+import { sendChatMessage, generateAllDrafts } from '../lib/claude'
 import { getGmailStatus, connectGmail, disconnectGmail, sendAllEmails } from '../lib/gmail'
 
 function Chat() {
@@ -140,7 +140,7 @@ function Chat() {
   // --- Main send handler ---
 
   const handleSend = useCallback(
-    (text) => {
+    async (text) => {
       const userMsg = {
         id: crypto.randomUUID(),
         role: 'user',
@@ -163,39 +163,67 @@ function Chat() {
 
       setThinking(true)
 
-      setTimeout(() => {
-        const results = searchContacts(text)
+      try {
+        // Build message history for Claude API
+        const currentChat = chats.find((c) => c.id === activeChatId)
+        const allMessages = [...(currentChat?.messages || []), userMsg]
+        const apiMessages = allMessages
+          .filter((m) => m.role === 'user' || (m.role === 'agent' && !m.type))
+          .map((m) => ({
+            role: m.role === 'user' ? 'user' : 'assistant',
+            content: m.content,
+          }))
 
-        if (results.length > 0) {
-          const contactsMsg = {
-            id: crypto.randomUUID(),
-            role: 'agent',
-            type: 'contacts',
-            content: `I found **${results.length} contact${results.length !== 1 ? 's' : ''}** matching your request. Review them below — you can remove anyone who isn't a good fit, then continue.`,
-            contacts: results,
-            confirmed: false,
-            timestamp: Date.now(),
+        const response = await sendChatMessage(apiMessages)
+
+        // If Claude wants to search contacts via tool_use
+        if (response.toolUse?.name === 'search_contacts') {
+          const query = response.toolUse.input.query
+          const results = searchContacts(query)
+
+          // Show Claude's text first if it has any
+          if (response.text) {
+            addAgentMessage(response.text)
           }
-          setChats((prev) =>
-            prev.map((chat) => {
-              if (chat.id !== activeChatId) return chat
-              return {
-                ...chat,
-                messages: [...chat.messages, contactsMsg],
-                updatedAt: Date.now(),
-              }
-            })
-          )
-        } else {
-          addAgentMessage(
-            `I couldn't find any contacts matching **"${text}"**. Try searching by role, company, industry, or location. You can also **upload a CSV** with your contacts using the button in the header.`
-          )
-        }
 
+          if (results.length > 0) {
+            const contactsMsg = {
+              id: crypto.randomUUID(),
+              role: 'agent',
+              type: 'contacts',
+              content: `I found **${results.length} contact${results.length !== 1 ? 's' : ''}** matching your request. Review them below — you can remove anyone who isn't a good fit, then continue.`,
+              contacts: results,
+              confirmed: false,
+              timestamp: Date.now(),
+            }
+            setChats((prev) =>
+              prev.map((chat) => {
+                if (chat.id !== activeChatId) return chat
+                return {
+                  ...chat,
+                  messages: [...chat.messages, contactsMsg],
+                  updatedAt: Date.now(),
+                }
+              })
+            )
+          } else {
+            addAgentMessage(
+              `I searched for **"${query}"** but couldn't find any matching contacts. Try different terms like role, company, industry, or location. You can also **upload a CSV** with your contacts using the button in the header.`
+            )
+          }
+        } else if (response.text) {
+          // Pure conversational response
+          addAgentMessage(response.text)
+        }
+      } catch (err) {
+        addAgentMessage(
+          `Sorry, I ran into an error: ${err.message}. Please try again.`
+        )
+      } finally {
         setThinking(false)
-      }, 300)
+      }
     },
-    [activeChatId, addAgentMessage]
+    [activeChatId, chats, addAgentMessage]
   )
 
   // --- Contact confirmation → AI email drafting ---

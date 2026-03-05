@@ -1,3 +1,32 @@
+// Calls the server-side /api/chat endpoint for conversational AI.
+// Falls back to a simple local response if the API is unavailable.
+
+export async function sendChatMessage(messages) {
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages }),
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.error || 'Chat service unavailable')
+    }
+
+    return await response.json()
+  } catch (err) {
+    if (err.message === 'Failed to fetch' || err.message.includes('NetworkError')) {
+      console.warn('Chat API unavailable, using fallback response')
+      return {
+        text: "I'm your Email Agent assistant. I can help you find contacts and draft personalized emails. Try asking me to find contacts by role, company, or industry — for example, \"find marketing managers\" or \"who works at Acme Corp?\"",
+        toolUse: null,
+      }
+    }
+    throw err
+  }
+}
+
 // Calls the server-side /api/draft endpoint which securely holds the API key.
 // Falls back to client-side mock drafts if the API is unavailable.
 
