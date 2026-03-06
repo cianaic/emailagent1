@@ -1,6 +1,6 @@
 import { useAuth } from '../lib/authContext'
 import { useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 const FEATURES = [
   {
@@ -44,10 +44,20 @@ const FEATURES = [
 export default function Landing() {
   const { user, signInWithGoogle, supabaseConfigured } = useAuth()
   const navigate = useNavigate()
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (user) navigate('/onboarding')
   }, [user, navigate])
+
+  async function handleSignIn() {
+    try {
+      setError(null)
+      await signInWithGoogle()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-cream">
@@ -60,11 +70,17 @@ export default function Landing() {
         </div>
       )}
 
+      {error && (
+        <div className="bg-red-50 border-b border-red-200 px-6 py-3 text-center text-sm text-red-700">
+          <strong>Sign-in failed:</strong> {error}
+        </div>
+      )}
+
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-5 max-w-5xl mx-auto">
         <span className="font-serif text-2xl font-semibold text-text tracking-tight">ChiefMail</span>
         <button
-          onClick={signInWithGoogle}
+          onClick={handleSignIn}
           className="text-sm font-medium text-white bg-text rounded-full px-5 py-2.5 hover:bg-gray-800 transition-colors cursor-pointer"
         >
           Sign in
@@ -92,7 +108,7 @@ export default function Landing() {
 
         {/* CTA Button */}
         <button
-          onClick={signInWithGoogle}
+          onClick={handleSignIn}
           className="group inline-flex items-center gap-4 rounded-full pl-8 pr-2 py-2 text-base font-medium cursor-pointer transition-all"
           style={{
             background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 70%, #f5f0e8 100%)',
@@ -176,7 +192,7 @@ export default function Landing() {
           Your AI Chief of Staff is ready to start learning.
         </p>
         <button
-          onClick={signInWithGoogle}
+          onClick={handleSignIn}
           className="group inline-flex items-center gap-4 rounded-full pl-8 pr-2 py-2 text-base font-medium cursor-pointer transition-all"
           style={{
             background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 70%, #f5f0e8 100%)',
