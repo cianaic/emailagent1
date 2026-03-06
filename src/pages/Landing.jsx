@@ -42,7 +42,7 @@ const FEATURES = [
 ]
 
 export default function Landing() {
-  const { user, signInWithGoogle } = useAuth()
+  const { user, signInWithGoogle, supabaseConfigured } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -51,6 +51,14 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-cream">
+      {!supabaseConfigured && (
+        <div className="bg-red-50 border-b border-red-200 px-6 py-3 text-center text-sm text-red-700">
+          <strong>Configuration required:</strong> Copy{' '}
+          <code className="bg-red-100 px-1 rounded">.env.example</code> to{' '}
+          <code className="bg-red-100 px-1 rounded">.env</code> and fill in your
+          Supabase credentials, then restart the dev server.
+        </div>
+      )}
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <div className="flex items-center gap-2">
