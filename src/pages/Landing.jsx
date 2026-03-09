@@ -1,6 +1,6 @@
 import { useAuth } from '../lib/authContext'
 import { useNavigate } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 const FEATURES = [
   {
@@ -44,10 +44,20 @@ const FEATURES = [
 export default function Landing() {
   const { user, signInWithGoogle, supabaseConfigured } = useAuth()
   const navigate = useNavigate()
+  const [signInError, setSignInError] = useState(null)
 
   useEffect(() => {
     if (user) navigate('/onboarding')
   }, [user, navigate])
+
+  const handleSignIn = useCallback(async () => {
+    try {
+      setSignInError(null)
+      await signInWithGoogle()
+    } catch (err) {
+      setSignInError(err.message || 'Failed to sign in with Google. Please try again.')
+    }
+  }, [signInWithGoogle])
 
   return (
     <div className="min-h-screen bg-cream">
@@ -60,11 +70,36 @@ export default function Landing() {
         </div>
       )}
 
+      {/* Error popup */}
+      {signInError && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 max-w-md w-full px-4 animate-fade-in">
+          <div className="bg-white border border-red-200 rounded-xl shadow-lg p-4 flex items-start gap-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+              <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-red-800">Sign-in failed</p>
+              <p className="text-sm text-red-600 mt-0.5">{signInError}</p>
+            </div>
+            <button
+              onClick={() => setSignInError(null)}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-5 max-w-5xl mx-auto">
         <span className="font-serif text-2xl font-semibold text-text tracking-tight">ChiefMail</span>
         <button
-          onClick={signInWithGoogle}
+          onClick={handleSignIn}
           className="text-sm font-medium text-white bg-text rounded-full px-5 py-2.5 hover:bg-gray-800 transition-colors cursor-pointer"
         >
           Sign in
@@ -92,7 +127,7 @@ export default function Landing() {
 
         {/* CTA Button */}
         <button
-          onClick={signInWithGoogle}
+          onClick={handleSignIn}
           className="group inline-flex items-center gap-4 rounded-full pl-8 pr-2 py-2 text-base font-medium cursor-pointer transition-all"
           style={{
             background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 70%, #f5f0e8 100%)',
@@ -176,7 +211,7 @@ export default function Landing() {
           Your AI Chief of Staff is ready to start learning.
         </p>
         <button
-          onClick={signInWithGoogle}
+          onClick={handleSignIn}
           className="group inline-flex items-center gap-4 rounded-full pl-8 pr-2 py-2 text-base font-medium cursor-pointer transition-all"
           style={{
             background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 70%, #f5f0e8 100%)',
