@@ -4,11 +4,21 @@ import ChatInput from '../components/ChatInput'
 import ChatSidebar from '../components/ChatSidebar'
 import CSVUpload from '../components/CSVUpload'
 import GmailStatus from '../components/GmailStatus'
+import ContactIntelButton from '../components/ContactIntelButton'
 import { loadChats, saveChats, createChat, deriveTitle } from '../lib/chatStore'
-import { searchContacts } from '../lib/contacts'
+import { searchContacts, mergeClassifiedContacts } from '../lib/contacts'
 import { sendChatMessage, generateAllDrafts } from '../lib/claude'
 import { sendAllEmails } from '../lib/gmail'
 import { useAuth } from '../lib/authContext'
+import { assembleGraph, assignGraphPositions } from '../lib/contactIntel'
+import {
+  scanFullInbox,
+  fetchTranscripts,
+  classifyContacts,
+  syncToNotion,
+  saveContactsLocally,
+  loadContactsLocally,
+} from '../lib/contactIntelApi'
 
 function Chat() {
   const { user, gmailConnected, providerToken, signOut } = useAuth()
@@ -27,6 +37,20 @@ function Chat() {
   const [emailDrafts, setEmailDrafts] = useState([])
   const [isDrafting, setIsDrafting] = useState(false)
   const [, setContactCount] = useState(null)
+  const [scanStage, setScanStage] = useState('idle')
+  const [scanProgress, setScanProgress] = useState('')
+  const [networkGraph, setNetworkGraph] = useState(null)
+  const [networkContacts, setNetworkContacts] = useState(null)
+
+  // Load previously saved contacts/graph from LocalStorage on mount
+  useEffect(() => {
+    const { contacts, graph } = loadContactsLocally()
+    if (contacts) {
+      setNetworkContacts(contacts)
+      mergeClassifiedContacts(contacts)
+    }
+    if (graph) setNetworkGraph(graph)
+  }, [])
 
   // Persist chats to LocalStorage whenever they change
   useEffect(() => {
@@ -263,6 +287,119 @@ function Chat() {
     [activeChatId, activeChat.messages, addAgentMessage, gmailConnected]
   )
 
+  // --- Contact Intelligence scan handler ---
+
+  const handleContactIntelScan = useCallback(async () => {
+    if (!gmailConnected || !providerToken) {
+      addAgentMessage('Please sign in with Gmail first to scan your network.')
+      return
+    }
+
+    try {
+      // Stage 1: Scan inbox
+      setScanStage('scanning')
+      addAgentMessage('Starting network scan — reading your entire Gmail history...')
+
+      const scannedContacts = await scanFullInbox(providerToken, {
+        batchSize: 100,
+        onProgress: ({ contactCount, messagesProcessed, done }) => {
+          setScanProgress(`${contactCount} contacts, ${messagesProcessed} emails`)
+          if (done) {
+            addAgentMessage(
+              `Scan complete. Found **${contactCount}** unique contacts across **${messagesProcessed}** emails.`
+            )
+          }
+        },
+      })
+
+      if (scannedContacts.length === 0) {
+        addAgentMessage('No contacts found in your inbox.')
+        setScanStage('idle')
+        return
+      }
+
+      // Stage 2: Fetch transcripts
+      setScanStage('reading')
+      addAgentMessage(`Reading conversation transcripts for ${scannedContacts.length} contacts...`)
+
+      const transcripts = await fetchTranscripts(providerToken, scannedContacts, {
+        maxThreadsPerContact: 20,
+        onProgress: ({ processed, total }) => {
+          setScanProgress(`${processed}/${total}`)
+        },
+      })
+
+      // Merge transcripts into contacts
+      const contactsWithTranscripts = scannedContacts.map((c) => ({
+        ...c,
+        transcript: transcripts[c.email] || null,
+      }))
+
+      // Stage 3: Classify via Groq
+      setScanStage('classifying')
+      addAgentMessage('Classifying contacts with AI — understanding your relationships...')
+
+      const classificationMap = await classifyContacts(contactsWithTranscripts, {
+        onProgress: ({ processed, total }) => {
+          setScanProgress(`${processed}/${total}`)
+        },
+      })
+
+      // Apply classifications
+      const classifiedContacts = scannedContacts.map((c) => ({
+        ...c,
+        classification: classificationMap[c.email] || null,
+      }))
+
+      // Stage 4: Build knowledge graph
+      setScanStage('graphing')
+      setScanProgress('')
+      const graph = assembleGraph(classifiedContacts)
+      const contactsWithGraph = assignGraphPositions(classifiedContacts, graph)
+
+      setNetworkGraph(graph)
+      setNetworkContacts(contactsWithGraph)
+
+      // Merge into contact store for search
+      mergeClassifiedContacts(contactsWithGraph)
+
+      // Save to LocalStorage
+      saveContactsLocally(contactsWithGraph, graph)
+
+      // Post summary + graph to chat
+      addAgentMessage('', {
+        type: 'contact-intel-summary',
+        contacts: contactsWithGraph,
+        graph,
+      })
+
+      addAgentMessage('', {
+        type: 'knowledge-graph',
+        contacts: contactsWithGraph,
+        graph,
+      })
+
+      // Stage 5: Sync to Notion (optional, don't block)
+      setScanStage('syncing')
+      setScanProgress('')
+      try {
+        const syncResult = await syncToNotion(contactsWithGraph)
+        addAgentMessage(
+          `Synced to Notion CRM: **${syncResult.created}** new, **${syncResult.updated}** updated.`
+        )
+      } catch {
+        addAgentMessage('Notion sync skipped — configure NOTION_API_KEY to enable CRM sync.')
+      }
+
+      setScanStage('done')
+      setScanProgress('')
+    } catch (err) {
+      addAgentMessage(`Network scan failed: ${err.message}`)
+      setScanStage('idle')
+      setScanProgress('')
+    }
+  }, [gmailConnected, providerToken, addAgentMessage])
+
   // --- Chat management handlers ---
 
   const handleNewChat = useCallback(() => {
@@ -320,6 +457,12 @@ function Chat() {
             </button>
             <h1 className="text-lg font-semibold text-text">Email Agent</h1>
             <div className="ml-auto flex items-center gap-3">
+              <ContactIntelButton
+                stage={scanStage}
+                progress={scanProgress}
+                disabled={!gmailConnected}
+                onClick={handleContactIntelScan}
+              />
               <CSVUpload onUpload={setContactCount} />
               <GmailStatus
                 gmailStatus={{ connected: gmailConnected, email: user?.email }}

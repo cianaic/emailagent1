@@ -20,6 +20,7 @@ export function searchContacts(query) {
 
   const scored = contactsData
     .map((contact) => {
+      const c = contact.classification || {}
       const searchable = [
         contact.name,
         contact.role,
@@ -27,6 +28,12 @@ export function searchContacts(query) {
         contact.location || '',
         contact.bio || '',
         ...(contact.tags || []),
+        c.who || '',
+        c.relationshipType || '',
+        c.group || '',
+        c.subgroup || '',
+        c.context || '',
+        ...(c.topics || []),
       ]
         .join(' ')
         .toLowerCase()
@@ -135,5 +142,31 @@ export function addContacts(contacts) {
  */
 export function resetContacts() {
   contactsData = [...seedContacts]
+  return contactsData.length
+}
+
+/**
+ * Get a contact by email address.
+ */
+export function getContactByEmail(email) {
+  return contactsData.find((c) => c.email.toLowerCase() === email.toLowerCase())
+}
+
+/**
+ * Merge classified contacts from Contact Intelligence scan.
+ * Deduplicates by email — classified data takes precedence.
+ */
+export function mergeClassifiedContacts(classifiedContacts) {
+  const emailMap = {}
+  for (const c of contactsData) {
+    emailMap[c.email.toLowerCase()] = c
+  }
+  for (const c of classifiedContacts) {
+    emailMap[c.email.toLowerCase()] = {
+      ...emailMap[c.email.toLowerCase()],
+      ...c,
+    }
+  }
+  contactsData = Object.values(emailMap)
   return contactsData.length
 }

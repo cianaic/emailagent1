@@ -3,6 +3,8 @@ import MessageBubble from './MessageBubble'
 import ThinkingIndicator from './ThinkingIndicator'
 import ContactListMessage from './ContactListMessage'
 import EmailDraftList from './EmailDraftList'
+import ContactIntelSummary from './ContactIntelSummary'
+import KnowledgeGraphView from './KnowledgeGraphView'
 
 function MessageList({
   messages,
@@ -51,6 +53,24 @@ function MessageList({
                 onUpdateDraft={onUpdateDraft}
                 onConfirmDraft={onConfirmDraft}
                 onSendAll={onSendAll}
+              />
+            )
+          }
+          if (msg.type === 'contact-intel-summary') {
+            return (
+              <ContactIntelSummary
+                key={msg.id}
+                contacts={msg.contacts}
+                graph={msg.graph}
+              />
+            )
+          }
+          if (msg.type === 'knowledge-graph') {
+            return (
+              <KnowledgeGraphView
+                key={msg.id}
+                contacts={msg.contacts}
+                graph={msg.graph}
               />
             )
           }
