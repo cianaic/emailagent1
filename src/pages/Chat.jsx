@@ -7,9 +7,12 @@ import GmailStatus from '../components/GmailStatus'
 import { loadChats, saveChats, createChat, deriveTitle } from '../lib/chatStore'
 import { searchContacts } from '../lib/contacts'
 import { sendChatMessage, generateAllDrafts } from '../lib/claude'
-import { getGmailStatus, connectGmail, disconnectGmail, sendAllEmails } from '../lib/gmail'
+import { sendAllEmails } from '../lib/gmail'
+import { useAuth } from '../lib/authContext'
 
 function Chat() {
+  const { user, gmailConnected, providerToken, signOut } = useAuth()
+
   const [chats, setChats] = useState(() => {
     const saved = loadChats()
     if (saved.length > 0) return saved
@@ -23,25 +26,7 @@ function Chat() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [emailDrafts, setEmailDrafts] = useState([])
   const [isDrafting, setIsDrafting] = useState(false)
-  const [gmailStatus, setGmailStatus] = useState({ connected: false })
   const [, setContactCount] = useState(null)
-
-  // Check Gmail connection status on mount and after OAuth redirect
-  useEffect(() => {
-    getGmailStatus().then(setGmailStatus)
-
-    // Handle OAuth redirect params
-    const params = new URLSearchParams(window.location.search)
-    const gmailConnected = params.get('gmail_connected')
-    const gmailError = params.get('gmail_error')
-
-    if (gmailConnected) {
-      setGmailStatus({ connected: true, email: gmailConnected })
-      window.history.replaceState({}, '', '/')
-    } else if (gmailError) {
-      window.history.replaceState({}, '', '/')
-    }
-  }, [])
 
   // Persist chats to LocalStorage whenever they change
   useEffect(() => {
@@ -90,9 +75,9 @@ function Chat() {
   }, [])
 
   const handleSendAll = useCallback(async () => {
-    if (!gmailStatus.connected) {
+    if (!gmailConnected || !providerToken) {
       addAgentMessage(
-        'Please connect your Gmail account first using the button in the header, then try sending again.'
+        'Your Gmail session has expired. Please sign out and sign in again to reconnect.'
       )
       return
     }
@@ -109,7 +94,7 @@ function Chat() {
     )
 
     try {
-      const results = await sendAllEmails(confirmedDrafts)
+      const results = await sendAllEmails(confirmedDrafts, providerToken)
       const succeeded = results.filter((r) => r.success)
       const failed = results.filter((r) => !r.success)
 
@@ -135,7 +120,7 @@ function Chat() {
     } finally {
       setThinking(false)
     }
-  }, [gmailStatus, emailDrafts, addAgentMessage])
+  }, [gmailConnected, providerToken, emailDrafts, addAgentMessage])
 
   // --- Main send handler ---
 
@@ -262,7 +247,7 @@ function Chat() {
         setEmailDrafts(drafts)
 
         addAgentMessage(
-          `Here are your **${drafts.length}** AI-generated email drafts. Review and edit each one, then confirm. ${gmailStatus.connected ? 'Once confirmed, click **Send All** to deliver via Gmail.' : 'Connect your Gmail account to send them.'}`
+          `Here are your **${drafts.length}** AI-generated email drafts. Review and edit each one, then confirm. ${gmailConnected ? 'Once confirmed, click **Send All** to deliver via Gmail.' : 'Your Gmail session may have expired — sign out and back in to send.'}`
         )
 
         addAgentMessage('', { type: 'email-drafts' })
@@ -275,7 +260,7 @@ function Chat() {
         setThinking(false)
       }
     },
-    [activeChatId, activeChat.messages, addAgentMessage, gmailStatus.connected]
+    [activeChatId, activeChat.messages, addAgentMessage, gmailConnected]
   )
 
   // --- Chat management handlers ---
@@ -309,11 +294,6 @@ function Chat() {
     [activeChatId]
   )
 
-  const handleDisconnect = useCallback(async () => {
-    await disconnectGmail()
-    setGmailStatus({ connected: false })
-  }, [])
-
   return (
     <div className="flex h-screen">
       <ChatSidebar
@@ -342,9 +322,8 @@ function Chat() {
             <div className="ml-auto flex items-center gap-3">
               <CSVUpload onUpload={setContactCount} />
               <GmailStatus
-                gmailStatus={gmailStatus}
-                onConnect={connectGmail}
-                onDisconnect={handleDisconnect}
+                gmailStatus={{ connected: gmailConnected, email: user?.email }}
+                onDisconnect={signOut}
               />
             </div>
           </div>
