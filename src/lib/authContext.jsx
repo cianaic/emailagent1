@@ -5,6 +5,7 @@ const AuthContext = createContext({})
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [providerToken, setProviderToken] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -15,11 +16,16 @@ export function AuthProvider({ children }) {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
+      setProviderToken(session?.provider_token ?? null)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      // provider_token is only available on initial sign-in; preserve it
+      if (session?.provider_token) {
+        setProviderToken(session.provider_token)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -45,12 +51,24 @@ export function AuthProvider({ children }) {
 
   async function signOut() {
     if (!supabaseConfigured) return
+    setProviderToken(null)
     const { error } = await supabase.auth.signOut()
     if (error) throw error
   }
 
+  // Gmail is connected when we have a valid provider token from the Supabase OAuth session
+  const gmailConnected = !!providerToken
+
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut, supabaseConfigured }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      providerToken,
+      gmailConnected,
+      signInWithGoogle,
+      signOut,
+      supabaseConfigured,
+    }}>
       {children}
     </AuthContext.Provider>
   )
