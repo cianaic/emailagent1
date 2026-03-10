@@ -1,3 +1,5 @@
+'use client'
+
 import EmailPreviewCard from './EmailPreviewCard'
 import { Button } from './ui/Button'
 

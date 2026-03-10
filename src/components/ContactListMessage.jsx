@@ -1,3 +1,5 @@
+'use client'
+
 import { useState } from 'react'
 import ContactCard from './ContactCard'
 import { Button } from './ui/Button'

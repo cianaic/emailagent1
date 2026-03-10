@@ -1,3 +1,5 @@
+'use client'
+
 import { useRef, useState } from 'react'
 import { Button } from './ui/Button'
 import { parseCSV, loadContacts, getContactCount } from '../lib/contacts'

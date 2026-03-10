@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useRef } from 'react'
 import MessageBubble from './MessageBubble'
 import ThinkingIndicator from './ThinkingIndicator'

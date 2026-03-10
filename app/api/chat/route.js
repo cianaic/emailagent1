@@ -1,3 +1,5 @@
+import { NextResponse } from 'next/server'
+
 const SYSTEM_PROMPT = `You are an AI email outreach assistant called Email Agent. You help users find contacts, draft personalized emails, and strategize their outreach.
 
 Your capabilities:
@@ -28,19 +30,15 @@ const TOOLS = [
   },
 ]
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-
+export async function POST(request) {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
-    return res.status(500).json({ error: 'API key not configured' })
+    return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
   }
 
-  const { messages } = req.body
+  const { messages } = await request.json()
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'Missing or invalid messages array' })
+    return NextResponse.json({ error: 'Missing or invalid messages array' }, { status: 400 })
   }
 
   try {
@@ -63,7 +61,7 @@ export default async function handler(req, res) {
     if (!response.ok) {
       const errText = await response.text()
       console.error('Claude API error:', response.status, errText)
-      return res.status(502).json({ error: 'Chat service unavailable' })
+      return NextResponse.json({ error: 'Chat service unavailable' }, { status: 502 })
     }
 
     const data = await response.json()
@@ -85,9 +83,9 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json(result)
+    return NextResponse.json(result)
   } catch (err) {
     console.error('Chat error:', err)
-    return res.status(500).json({ error: 'Failed to process chat message' })
+    return NextResponse.json({ error: 'Failed to process chat message' }, { status: 500 })
   }
 }

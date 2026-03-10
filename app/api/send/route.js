@@ -1,20 +1,20 @@
 import { google } from 'googleapis'
+import { NextResponse } from 'next/server'
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-
+export async function POST(request) {
   // Extract the Google provider token from the Authorization header
-  const authHeader = req.headers.authorization
+  const authHeader = request.headers.get('authorization')
   if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing authorization token. Please sign in again.' })
+    return NextResponse.json(
+      { error: 'Missing authorization token. Please sign in again.' },
+      { status: 401 }
+    )
   }
   const accessToken = authHeader.slice(7)
 
-  const { to, subject, body, fromName } = req.body
+  const { to, subject, body, fromName } = await request.json()
   if (!to || !subject || !body) {
-    return res.status(400).json({ error: 'Missing to, subject, or body' })
+    return NextResponse.json({ error: 'Missing to, subject, or body' }, { status: 400 })
   }
 
   const oauth2Client = new google.auth.OAuth2()
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       requestBody: { raw: encodedMessage },
     })
 
-    return res.status(200).json({
+    return NextResponse.json({
       success: true,
       messageId: result.data.id,
       threadId: result.data.threadId,
@@ -60,8 +60,11 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error('Gmail send error:', err.message)
     if (err.code === 401 || err.code === 403) {
-      return res.status(401).json({ error: 'Gmail token expired. Please sign in again.' })
+      return NextResponse.json(
+        { error: 'Gmail token expired. Please sign in again.' },
+        { status: 401 }
+      )
     }
-    return res.status(500).json({ error: 'Failed to send email' })
+    return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
   }
 }

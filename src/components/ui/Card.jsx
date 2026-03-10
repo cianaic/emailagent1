@@ -1,3 +1,5 @@
+'use client'
+
 const Card = ({ className = '', ...props }) => (
   <div className={`rounded-xl border border-border bg-white shadow-sm ${className}`} {...props} />
 )

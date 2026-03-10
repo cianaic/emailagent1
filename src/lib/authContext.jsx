@@ -1,3 +1,5 @@
+'use client'
+
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase, supabaseConfigured } from './supabase'
 
@@ -6,13 +8,10 @@ const AuthContext = createContext({})
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [providerToken, setProviderToken] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(supabaseConfigured)
 
   useEffect(() => {
-    if (!supabaseConfigured) {
-      setLoading(false)
-      return
-    }
+    if (!supabaseConfigured) return
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
@@ -33,7 +32,7 @@ export function AuthProvider({ children }) {
 
   async function signInWithGoogle() {
     if (!supabaseConfigured) {
-      throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.')
+      throw new Error('Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env file.')
     }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',

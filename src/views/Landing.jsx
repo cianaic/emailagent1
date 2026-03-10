@@ -1,5 +1,7 @@
+'use client'
+
 import { useAuth } from '../lib/authContext'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 
 const FEATURES = [
@@ -43,12 +45,12 @@ const FEATURES = [
 
 export default function Landing() {
   const { user, signInWithGoogle, supabaseConfigured } = useAuth()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [signInError, setSignInError] = useState(null)
 
   useEffect(() => {
-    if (user) navigate('/onboarding')
-  }, [user, navigate])
+    if (user) router.push('/onboarding')
+  }, [user, router])
 
   const handleSignIn = useCallback(async () => {
     try {

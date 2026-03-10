@@ -1,3 +1,5 @@
+'use client'
+
 import { forwardRef } from 'react'
 
 const ScrollArea = forwardRef(({ className = '', children, ...props }, ref) => {

@@ -1,3 +1,5 @@
+'use client'
+
 function ThinkingIndicator() {
   return (
     <div className="flex justify-start">

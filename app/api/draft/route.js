@@ -1,3 +1,5 @@
+import { NextResponse } from 'next/server'
+
 const SYSTEM_PROMPT = `You are an email drafting assistant. Given a contact and an outreach context, write a personalized cold email.
 
 Respond with ONLY valid JSON in this exact format:
@@ -14,19 +16,15 @@ Guidelines:
 - Professional but warm tone
 - No placeholder brackets like [Name] — use the actual details provided`
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-
+export async function POST(request) {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
-    return res.status(500).json({ error: 'API key not configured' })
+    return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
   }
 
-  const { contact, outreachContext } = req.body
+  const { contact, outreachContext } = await request.json()
   if (!contact || !outreachContext) {
-    return res.status(400).json({ error: 'Missing contact or outreachContext' })
+    return NextResponse.json({ error: 'Missing contact or outreachContext' }, { status: 400 })
   }
 
   const userPrompt = `Contact:
@@ -59,23 +57,23 @@ Write a personalized cold email for this contact.`
     if (!response.ok) {
       const errText = await response.text()
       console.error('Claude API error:', response.status, errText)
-      return res.status(502).json({ error: 'Email drafting service unavailable' })
+      return NextResponse.json({ error: 'Email drafting service unavailable' }, { status: 502 })
     }
 
     const data = await response.json()
     const text = data?.content?.[0]?.text
     if (!text) {
-      return res.status(502).json({ error: 'Empty response from drafting service' })
+      return NextResponse.json({ error: 'Empty response from drafting service' }, { status: 502 })
     }
 
     const draft = JSON.parse(text)
     if (typeof draft.subject !== 'string' || typeof draft.body !== 'string') {
-      return res.status(502).json({ error: 'Invalid draft format received' })
+      return NextResponse.json({ error: 'Invalid draft format received' }, { status: 502 })
     }
 
-    return res.status(200).json({ subject: draft.subject, body: draft.body })
+    return NextResponse.json({ subject: draft.subject, body: draft.body })
   } catch (err) {
     console.error('Draft generation error:', err)
-    return res.status(500).json({ error: 'Failed to generate draft' })
+    return NextResponse.json({ error: 'Failed to generate draft' }, { status: 500 })
   }
 }

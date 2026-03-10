@@ -1,3 +1,5 @@
+'use client'
+
 function ChatSidebar({ chats, activeChatId, onSelectChat, onNewChat, onDeleteChat, open, onClose }) {
   return (
     <>

@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useCallback, useEffect } from 'react'
 import MessageList from '../components/MessageList'
 import ChatInput from '../components/ChatInput'

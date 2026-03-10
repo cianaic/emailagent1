@@ -1,5 +1,7 @@
+'use client'
+
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '../lib/authContext'
 
 const ASSISTANTS = [
@@ -31,12 +33,12 @@ const SCAN_STEPS = [
 
 export default function Onboarding() {
   const { user, loading } = useAuth()
-  const navigate = useNavigate()
+  const router = useRouter()
   const [step, setStep] = useState(0) // 0: welcome, 1: assistant setup, 2: scanning
 
   useEffect(() => {
-    if (!loading && !user) navigate('/')
-  }, [user, loading, navigate])
+    if (!loading && !user) router.push('/')
+  }, [user, loading, router])
 
   if (loading) {
     return (
@@ -59,7 +61,7 @@ export default function Onboarding() {
       <div className="max-w-2xl mx-auto px-6 pt-16 pb-24">
         {step === 0 && <WelcomeStep user={user} onNext={() => setStep(1)} />}
         {step === 1 && <AssistantSetupStep onNext={() => setStep(2)} onBack={() => setStep(0)} />}
-        {step === 2 && <ScanningStep onComplete={() => navigate('/chat')} />}
+        {step === 2 && <ScanningStep onComplete={() => router.push('/chat')} />}
       </div>
     </div>
   )

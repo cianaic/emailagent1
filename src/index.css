@@ -22,8 +22,7 @@ body {
   min-height: 100vh;
 }
 
-#root {
-  min-height: 100vh;
+body {
   display: flex;
   flex-direction: column;
 }

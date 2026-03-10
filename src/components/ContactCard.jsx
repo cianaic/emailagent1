@@ -1,3 +1,5 @@
+'use client'
+
 import { Card, CardContent } from './ui/Card'
 
 function ContactCard({ contact, removed, onToggle }) {

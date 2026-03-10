@@ -1,3 +1,5 @@
+'use client'
+
 function GmailStatus({ gmailStatus, onDisconnect }) {
   if (gmailStatus.connected) {
     return (
