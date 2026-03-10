@@ -6,6 +6,7 @@ const AuthContext = createContext({})
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [providerToken, setProviderToken] = useState(null)
+  const [accessToken, setAccessToken] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -17,11 +18,13 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
       setProviderToken(session?.provider_token ?? null)
+      setAccessToken(session?.access_token ?? null)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      setAccessToken(session?.access_token ?? null)
       // provider_token is only available on initial sign-in; preserve it
       if (session?.provider_token) {
         setProviderToken(session.provider_token)
@@ -64,6 +67,7 @@ export function AuthProvider({ children }) {
       user,
       loading,
       providerToken,
+      accessToken,
       gmailConnected,
       signInWithGoogle,
       signOut,

@@ -105,7 +105,7 @@ export async function fetchTranscripts(providerToken, contacts, { maxThreadsPerC
 }
 
 /**
- * Classify contacts using Groq LLM.
+ * Classify contacts using Gemini 2.5 Flash-Lite.
  * Sends batches to the classify endpoint.
  * @param {object[]} contacts - Contacts with interaction data + transcripts
  * @param {object} options
@@ -140,50 +140,58 @@ export async function classifyContacts(contacts, { onProgress } = {}) {
 }
 
 /**
- * Sync contacts to Notion CRM.
+ * Save contacts + graph to Supabase.
+ * @param {string} supabaseAccessToken - Supabase auth token
  * @param {object[]} contacts - Enriched contact objects
+ * @param {object} graph - Knowledge graph structure
+ * @param {object} scanMetadata - Scan stats (contactsFound, emailsProcessed)
  */
-export async function syncToNotion(contacts) {
-  const response = await fetch('/api/contact-intel/sync', {
+export async function saveToSupabase(supabaseAccessToken, contacts, graph, scanMetadata) {
+  const groups = graph?.groups?.map((g) => ({
+    name: g.name,
+    type: g.type || null,
+    contactCount: g.contactCount || 0,
+  })) || []
+
+  const response = await fetch('/api/contact-intel/save', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contacts }),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${supabaseAccessToken}`,
+    },
+    body: JSON.stringify({ contacts, groups, scanMetadata }),
   })
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}))
-    throw new Error(err.error || `Notion sync failed: ${response.status}`)
+    throw new Error(err.error || `Save failed: ${response.status}`)
   }
 
   return response.json()
 }
 
 /**
- * Save contacts + graph to LocalStorage.
+ * Load contacts from Supabase.
+ * @param {string} supabaseAccessToken - Supabase auth token
+ * @returns {{ contacts: object[] | null, groups: object[] | null, scanMetadata: object | null }}
  */
-export function saveContactsLocally(contacts, graph) {
-  try {
-    localStorage.setItem('email-agent-contacts', JSON.stringify(contacts))
-    if (graph) {
-      localStorage.setItem('email-agent-graph', JSON.stringify(graph))
-    }
-  } catch (err) {
-    console.error('Failed to save contacts locally:', err)
-  }
-}
+export async function loadFromSupabase(supabaseAccessToken) {
+  const response = await fetch('/api/contact-intel/load', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${supabaseAccessToken}`,
+    },
+  })
 
-/**
- * Load contacts from LocalStorage.
- */
-export function loadContactsLocally() {
-  try {
-    const contacts = localStorage.getItem('email-agent-contacts')
-    const graph = localStorage.getItem('email-agent-graph')
-    return {
-      contacts: contacts ? JSON.parse(contacts) : null,
-      graph: graph ? JSON.parse(graph) : null,
-    }
-  } catch {
-    return { contacts: null, graph: null }
+  if (!response.ok) {
+    console.error('Failed to load contacts from Supabase:', response.status)
+    return { contacts: null, groups: null, scanMetadata: null }
+  }
+
+  const data = await response.json()
+  return {
+    contacts: data.contacts?.length > 0 ? data.contacts : null,
+    groups: data.groups?.length > 0 ? data.groups : null,
+    scanMetadata: data.scanMetadata || null,
   }
 }

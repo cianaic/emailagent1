@@ -15,13 +15,12 @@ import {
   scanFullInbox,
   fetchTranscripts,
   classifyContacts,
-  syncToNotion,
-  saveContactsLocally,
-  loadContactsLocally,
+  saveToSupabase,
+  loadFromSupabase,
 } from '../lib/contactIntelApi'
 
 function Chat() {
-  const { user, gmailConnected, providerToken, signOut } = useAuth()
+  const { user, gmailConnected, providerToken, accessToken, signOut } = useAuth()
 
   const [chats, setChats] = useState(() => {
     const saved = loadChats()
@@ -42,15 +41,20 @@ function Chat() {
   const [networkGraph, setNetworkGraph] = useState(null)
   const [networkContacts, setNetworkContacts] = useState(null)
 
-  // Load previously saved contacts/graph from LocalStorage on mount
+  // Load previously saved contacts from Supabase on mount
   useEffect(() => {
-    const { contacts, graph } = loadContactsLocally()
-    if (contacts) {
-      setNetworkContacts(contacts)
-      mergeClassifiedContacts(contacts)
-    }
-    if (graph) setNetworkGraph(graph)
-  }, [])
+    if (!accessToken) return
+    loadFromSupabase(accessToken).then(({ contacts, groups }) => {
+      if (contacts) {
+        setNetworkContacts(contacts)
+        mergeClassifiedContacts(contacts)
+      }
+      if (groups) {
+        // Reconstruct minimal graph from groups for display
+        setNetworkGraph({ groups, peripheral: [], bridges: [] })
+      }
+    })
+  }, [accessToken])
 
   // Persist chats to LocalStorage whenever they change
   useEffect(() => {
@@ -300,9 +304,11 @@ function Chat() {
       setScanStage('scanning')
       addAgentMessage('Starting network scan — reading your entire Gmail history...')
 
+      let totalEmailsProcessed = 0
       const scannedContacts = await scanFullInbox(providerToken, {
         batchSize: 100,
         onProgress: ({ contactCount, messagesProcessed, done }) => {
+          totalEmailsProcessed = messagesProcessed
           setScanProgress(`${contactCount} contacts, ${messagesProcessed} emails`)
           if (done) {
             addAgentMessage(
@@ -335,7 +341,7 @@ function Chat() {
         transcript: transcripts[c.email] || null,
       }))
 
-      // Stage 3: Classify via Groq
+      // Stage 3: Classify via Gemini
       setScanStage('classifying')
       addAgentMessage('Classifying contacts with AI — understanding your relationships...')
 
@@ -363,9 +369,6 @@ function Chat() {
       // Merge into contact store for search
       mergeClassifiedContacts(contactsWithGraph)
 
-      // Save to LocalStorage
-      saveContactsLocally(contactsWithGraph, graph)
-
       // Post summary + graph to chat
       addAgentMessage('', {
         type: 'contact-intel-summary',
@@ -379,16 +382,22 @@ function Chat() {
         graph,
       })
 
-      // Stage 5: Sync to Notion (optional, don't block)
+      // Stage 5: Save to Supabase (background, non-blocking)
       setScanStage('syncing')
       setScanProgress('')
-      try {
-        const syncResult = await syncToNotion(contactsWithGraph)
-        addAgentMessage(
-          `Synced to Notion CRM: **${syncResult.created}** new, **${syncResult.updated}** updated.`
-        )
-      } catch {
-        addAgentMessage('Notion sync skipped — configure NOTION_API_KEY to enable CRM sync.')
+      if (accessToken) {
+        try {
+          const saveResult = await saveToSupabase(accessToken, contactsWithGraph, graph, {
+            contactsFound: contactsWithGraph.length,
+            emailsProcessed: totalEmailsProcessed,
+          })
+          addAgentMessage(
+            `Saved **${saveResult.saved}** contacts to database.`
+          )
+        } catch (err) {
+          console.error('Supabase save error:', err)
+          addAgentMessage('Failed to save to database — contacts are available in this session.')
+        }
       }
 
       setScanStage('done')
@@ -398,7 +407,7 @@ function Chat() {
       setScanStage('idle')
       setScanProgress('')
     }
-  }, [gmailConnected, providerToken, addAgentMessage])
+  }, [gmailConnected, providerToken, accessToken, addAgentMessage])
 
   // --- Chat management handlers ---
 

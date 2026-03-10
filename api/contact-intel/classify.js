@@ -1,10 +1,7 @@
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct'
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
 
 const CLASSIFICATION_PROMPT = `You are analyzing email conversations between a user and one of their contacts.
 Based on the full transcript of their interactions, classify this contact.
-
-Respond with valid JSON only, no markdown fencing, no extra text.
 
 Required JSON schema:
 {
@@ -19,6 +16,25 @@ Required JSON schema:
   "peripheralTo": ["names of groups this person is adjacent to but not a member of, if any — empty array if none"]
 }`
 
+const RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    who: { type: 'STRING' },
+    relationshipType: {
+      type: 'STRING',
+      enum: ['colleague', 'client', 'vendor', 'investor', 'advisor', 'friend', 'family', 'recruiter', 'journalist', 'community', 'service_provider', 'government', 'unknown'],
+    },
+    group: { type: 'STRING' },
+    subgroup: { type: 'STRING' },
+    strength: { type: 'INTEGER' },
+    sentiment: { type: 'STRING', enum: ['positive', 'neutral', 'mixed', 'negative'] },
+    topics: { type: 'ARRAY', items: { type: 'STRING' } },
+    context: { type: 'STRING' },
+    peripheralTo: { type: 'ARRAY', items: { type: 'STRING' } },
+  },
+  required: ['who', 'relationshipType', 'group', 'strength', 'sentiment', 'topics', 'context', 'peripheralTo'],
+}
+
 function buildContactPrompt(contact) {
   const { name, email, interaction, transcript } = contact
 
@@ -32,9 +48,9 @@ function buildContactPrompt(contact) {
     }
   }
 
-  // Truncate transcript to ~30K words (~40K tokens)
-  if (transcriptText.length > 120000) {
-    transcriptText = transcriptText.slice(0, 120000) + '\n\n[... transcript truncated ...]'
+  // Gemini has 1M context — can be generous, but still cap at ~200K chars
+  if (transcriptText.length > 200000) {
+    transcriptText = transcriptText.slice(0, 200000) + '\n\n[... transcript truncated ...]'
   }
 
   const interactionSummary = interaction
@@ -47,33 +63,6 @@ ${interactionSummary}
 --- TRANSCRIPT ---
 ${transcriptText || 'No transcript available — classify based on metadata only.'}
 --- END TRANSCRIPT ---`
-}
-
-function parseClassification(text) {
-  // Try to parse JSON directly
-  try {
-    return JSON.parse(text)
-  } catch {
-    // Try to extract JSON from markdown fencing
-    const match = text.match(/```(?:json)?\s*([\s\S]*?)```/)
-    if (match) {
-      try {
-        return JSON.parse(match[1])
-      } catch {
-        // fall through
-      }
-    }
-    // Try to find JSON object in text
-    const braceMatch = text.match(/\{[\s\S]*\}/)
-    if (braceMatch) {
-      try {
-        return JSON.parse(braceMatch[0])
-      } catch {
-        // fall through
-      }
-    }
-  }
-  return null
 }
 
 const DEFAULT_CLASSIFICATION = {
@@ -93,9 +82,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const apiKey = process.env.GROQ_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
-    return res.status(500).json({ error: 'GROQ_API_KEY not configured' })
+    return res.status(500).json({ error: 'GEMINI_API_KEY not configured' })
   }
 
   const { contacts } = req.body
@@ -104,7 +93,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Process contacts in parallel (up to 5 concurrent)
     const CONCURRENCY = 5
     const classifications = []
 
@@ -116,35 +104,35 @@ export default async function handler(req, res) {
           try {
             const userContent = buildContactPrompt(contact)
 
-            const response = await fetch(GROQ_API_URL, {
+            const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${apiKey}`,
-              },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                model: MODEL,
-                messages: [
-                  { role: 'system', content: CLASSIFICATION_PROMPT },
-                  { role: 'user', content: userContent },
+                contents: [
+                  { role: 'user', parts: [{ text: CLASSIFICATION_PROMPT + '\n\n' + userContent }] },
                 ],
-                temperature: 0.1,
-                max_tokens: 1024,
-                response_format: { type: 'json_object' },
+                generationConfig: {
+                  temperature: 0.1,
+                  maxOutputTokens: 1024,
+                  responseMimeType: 'application/json',
+                  responseSchema: RESPONSE_SCHEMA,
+                },
               }),
             })
 
             if (!response.ok) {
-              console.error(`Groq API error for ${contact.email}:`, response.status)
+              console.error(`Gemini API error for ${contact.email}:`, response.status)
               return { email: contact.email, classification: { ...DEFAULT_CLASSIFICATION } }
             }
 
             const data = await response.json()
-            const text = data.choices?.[0]?.message?.content || ''
-            const parsed = parseClassification(text)
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
 
-            if (!parsed) {
-              console.error(`Failed to parse classification for ${contact.email}`)
+            let parsed
+            try {
+              parsed = JSON.parse(text)
+            } catch {
+              console.error(`Failed to parse Gemini response for ${contact.email}`)
               return { email: contact.email, classification: { ...DEFAULT_CLASSIFICATION } }
             }
 
@@ -153,9 +141,10 @@ export default async function handler(req, res) {
               classification: {
                 ...DEFAULT_CLASSIFICATION,
                 ...parsed,
+                subgroup: parsed.subgroup || '',
                 strength: Math.max(1, Math.min(10, Number(parsed.strength) || 1)),
                 classifiedAt: new Date().toISOString(),
-                model: MODEL,
+                model: 'gemini-2.5-flash-lite',
               },
             }
           } catch (err) {

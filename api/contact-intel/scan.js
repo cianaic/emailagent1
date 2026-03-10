@@ -60,6 +60,11 @@ export default async function handler(req, res) {
 
   const { pageToken, batchSize = 100 } = req.body
 
+  // 5-year lookback window
+  const fiveYearsAgo = new Date()
+  fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5)
+  const afterDate = `${fiveYearsAgo.getFullYear()}/${String(fiveYearsAgo.getMonth() + 1).padStart(2, '0')}/${String(fiveYearsAgo.getDate()).padStart(2, '0')}`
+
   const oauth2Client = new google.auth.OAuth2()
   oauth2Client.setCredentials({ access_token: accessToken })
 
@@ -70,10 +75,11 @@ export default async function handler(req, res) {
     const profile = await gmail.users.getProfile({ userId: 'me' })
     const userEmail = profile.data.emailAddress.toLowerCase()
 
-    // List messages with pagination
+    // List messages: primary category only (excludes promos/social/updates/forums) + 5-year window
     const listParams = {
       userId: 'me',
       maxResults: Math.min(batchSize, 500),
+      q: `category:primary after:${afterDate}`,
     }
     if (pageToken) listParams.pageToken = pageToken
 
@@ -91,7 +97,7 @@ export default async function handler(req, res) {
             userId: 'me',
             id: msg.id,
             format: 'metadata',
-            metadataHeaders: ['From', 'To', 'Cc', 'Date', 'Subject'],
+            metadataHeaders: ['From', 'To', 'Cc', 'Date', 'Subject', 'List-Unsubscribe', 'Precedence'],
           })
           .catch(() => null)
       )
@@ -101,6 +107,12 @@ export default async function handler(req, res) {
       if (!detail?.data) continue
 
       const headers = detail.data.payload?.headers || []
+
+      // Skip bulk/list emails that slipped past category:primary
+      const listUnsub = getHeader(headers, 'List-Unsubscribe')
+      const precedence = getHeader(headers, 'Precedence').toLowerCase()
+      if (listUnsub || precedence === 'bulk' || precedence === 'list') continue
+
       const from = parseEmailAddress(getHeader(headers, 'From'))
       const date = getHeader(headers, 'Date')
       const subject = getHeader(headers, 'Subject')
