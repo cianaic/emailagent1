@@ -13,8 +13,8 @@ function MessageBubble({ message }) {
       <div
         className={`max-w-[80%] rounded-2xl px-4 py-2.5 ${
           isUser
-            ? 'bg-coral text-white'
-            : 'bg-white text-text shadow-sm border border-border'
+            ? 'bg-electric text-white'
+            : 'bg-ocean-light text-text shadow-sm border border-border'
         }`}
       >
         <div className="prose prose-sm max-w-none [&_p]:m-0">

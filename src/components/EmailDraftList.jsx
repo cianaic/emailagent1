@@ -18,7 +18,7 @@ function EmailDraftList({ drafts, onUpdateDraft, onConfirmDraft, onSendAll }) {
       ))}
 
       {/* Progress / Send All */}
-      <div className="flex items-center justify-between rounded-xl border border-border bg-white px-4 py-3">
+      <div className="flex items-center justify-between rounded-xl border border-border bg-ocean-light px-4 py-3">
         <p className="text-sm text-text-muted">
           {confirmedCount} of {drafts.length} emails confirmed
         </p>

@@ -36,7 +36,7 @@ function EmailPreviewCard({ draft, onUpdate, onConfirm }) {
         {/* Header: contact info + status */}
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-coral/10 text-sm font-medium text-coral">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-electric/10 text-sm font-medium text-electric">
               {draft.contact.name.charAt(0)}
             </div>
             <div className="min-w-0">
@@ -61,7 +61,7 @@ function EmailPreviewCard({ draft, onUpdate, onConfirm }) {
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="mb-2 w-full rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-text focus:outline-2 focus:outline-coral"
+            className="mb-2 w-full rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-text focus:outline-2 focus:outline-electric"
             placeholder="Subject"
           />
         ) : (
@@ -77,10 +77,10 @@ function EmailPreviewCard({ draft, onUpdate, onConfirm }) {
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={6}
-            className="mb-3 w-full resize-y rounded-lg border border-border px-3 py-2 text-sm text-text focus:outline-2 focus:outline-coral"
+            className="mb-3 w-full resize-y rounded-lg border border-border px-3 py-2 text-sm text-text focus:outline-2 focus:outline-electric"
           />
         ) : (
-          <div className="mb-3 whitespace-pre-wrap rounded-lg bg-cream px-3 py-2 text-sm leading-relaxed text-text">
+          <div className="mb-3 whitespace-pre-wrap rounded-lg bg-ocean px-3 py-2 text-sm leading-relaxed text-text">
             {draft.body}
           </div>
         )}
