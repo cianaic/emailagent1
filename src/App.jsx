@@ -8,8 +8,8 @@ function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-coral border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-ocean flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-electric border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }

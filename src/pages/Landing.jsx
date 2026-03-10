@@ -10,7 +10,7 @@ const FEATURES = [
       </svg>
     ),
     title: 'Deep Contact Intelligence',
-    desc: 'Your assistant runs an industry-leading scan of your Gmail history, building a rich context map of every relationship — who they are, how you interact, and how quickly you respond.',
+    desc: 'Marlin runs an industry-leading scan of your Gmail history, building a rich context map of every relationship — who they are, how you interact, and how quickly you respond.',
   },
   {
     icon: (
@@ -28,7 +28,7 @@ const FEATURES = [
       </svg>
     ),
     title: 'Calendar-Aware Actions',
-    desc: 'Much of email work is really calendar work. Your assistant understands scheduling context and can draft replies, propose times, and manage your availability.',
+    desc: 'Much of email work is really calendar work. Marlin understands scheduling context and can draft replies, propose times, and manage your availability.',
   },
   {
     icon: (
@@ -60,32 +60,31 @@ export default function Landing() {
   }, [signInWithGoogle])
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-ocean">
       {!supabaseConfigured && (
-        <div className="bg-red-50 border-b border-red-200 px-6 py-3 text-center text-sm text-red-700">
+        <div className="bg-red-950/50 border-b border-red-800 px-6 py-3 text-center text-sm text-red-300">
           <strong>Configuration required:</strong> Copy{' '}
-          <code className="bg-red-100 px-1 rounded">.env.example</code> to{' '}
-          <code className="bg-red-100 px-1 rounded">.env</code> and fill in your
+          <code className="bg-red-900/50 px-1 rounded">.env.example</code> to{' '}
+          <code className="bg-red-900/50 px-1 rounded">.env</code> and fill in your
           Supabase credentials, then restart the dev server.
         </div>
       )}
 
-      {/* Error popup */}
       {signInError && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 max-w-md w-full px-4 animate-fade-in">
-          <div className="bg-white border border-red-200 rounded-xl shadow-lg p-4 flex items-start gap-3">
-            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="bg-ocean-light border border-red-800 rounded-xl shadow-lg p-4 flex items-start gap-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-900/50 flex items-center justify-center">
+              <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-red-800">Sign-in failed</p>
-              <p className="text-sm text-red-600 mt-0.5">{signInError}</p>
+              <p className="text-sm font-semibold text-red-300">Sign-in failed</p>
+              <p className="text-sm text-red-400 mt-0.5">{signInError}</p>
             </div>
             <button
               onClick={() => setSignInError(null)}
-              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              className="flex-shrink-0 text-text-muted hover:text-text transition-colors cursor-pointer"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -95,42 +94,45 @@ export default function Landing() {
         </div>
       )}
 
-      {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-5 max-w-5xl mx-auto">
-        <span className="font-serif text-2xl font-semibold text-text tracking-tight">ChiefMail</span>
+        <div className="flex items-center gap-2.5">
+          <svg className="w-6 h-6" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 17.5c1.5-1 4-2.5 7-3.2 2-.5 4.5-.6 7.2.3 1.8.6 3.5 1.8 5 3.4l2.5 2.8c.8.9 1.8 1.5 2.8 1.7 1.2.2 2.3-.1 3.5-1-1 2-2.5 3.2-4.2 3.5-1.5.3-3-.2-4.3-1.2L19 21.5c-1.2-1.2-2.5-2-3.8-2.5-2-.7-4-.6-6 .1-2.5.9-4.5 2.5-6.2 4.4.2-2.5.8-4.5 1.8-6Z" fill="#2563eb"/>
+            <path d="M6 14c3-2.5 6.5-4 10-4 2.8 0 5.5.8 8 2.8 1.5 1.2 2.8 2.8 4 4.7-.8-.5-1.8-.8-2.8-1-1.2-.2-2.3 0-3.3.5l-.4.2c-1.5-1.8-3.2-3-5-3.7C14 12.5 11 12.8 8.2 14c-1 .5-1.8 1-2.5 1.5L6 14Z" fill="#2563eb"/>
+            <path d="M26.5 8c.8-1.5 1.5-3.2 1.5-5-.5 1.5-1.2 2.8-2 3.8-.5.5-1 1-1.5 1.2.5.3 1 .8 1.5 1.3l.5-1.3Z" fill="#2563eb"/>
+          </svg>
+          <span className="font-heading text-2xl font-semibold text-text tracking-tight">Marlin</span>
+        </div>
         <button
           onClick={handleSignIn}
-          className="text-sm font-medium text-white bg-text rounded-full px-5 py-2.5 hover:bg-gray-800 transition-colors cursor-pointer"
+          className="text-sm font-medium text-white bg-electric rounded-full px-5 py-2.5 hover:bg-electric-dark transition-colors cursor-pointer"
         >
           Sign in
         </button>
       </nav>
 
-      {/* Hero */}
       <section className="max-w-4xl mx-auto px-6 pt-16 sm:pt-24 pb-12 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full bg-white border border-border px-4 py-1.5 text-sm text-text-muted mb-8">
-          <svg className="w-4 h-4 text-coral" viewBox="0 0 24 24" fill="currentColor">
+        <div className="inline-flex items-center gap-2 rounded-full bg-ocean-light border border-border px-4 py-1.5 text-sm text-text-muted mb-8">
+          <svg className="w-4 h-4 text-electric" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
           </svg>
-          Lightning fast email & calendar agent
+          The fastest fish on Gmail
         </div>
 
-        <h1 className="font-serif text-5xl sm:text-7xl lg:text-8xl font-medium text-text tracking-tight leading-[1.05] mb-8">
-          Lightning fast<br />
-          <span className="text-coral">email & calendar agent</span>
+        <h1 className="font-heading text-5xl sm:text-7xl lg:text-8xl font-medium text-text tracking-tight leading-[1.05] mb-8">
+          Be the fastest fish<br />
+          <span className="text-electric">on Gmail</span>
         </h1>
 
         <p className="text-base sm:text-lg text-text-muted max-w-2xl mx-auto mb-12 leading-relaxed">
-          An AI assistant that learns more about you in 2 days than a human executive assistant would in 2 years.
-          It scans your entire email history, builds deep relationship context, and powerfully automates actions on your actual inbox.
+          Marlin dives deep into your email history, surfaces your most important relationships, and navigates your inbox at 80mph. An AI assistant that learns more about you in 2 days than a human EA would in 2 years.
         </p>
 
-        {/* CTA Button */}
         <button
           onClick={handleSignIn}
           className="group inline-flex items-center gap-4 rounded-full pl-8 pr-2 py-2 text-base font-medium cursor-pointer transition-all"
           style={{
-            background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 70%, #f5f0e8 100%)',
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 70%, #2563eb 100%)',
             color: '#fff',
           }}
         >
@@ -153,22 +155,20 @@ export default function Landing() {
         </p>
       </section>
 
-      {/* Visual — Contact Network */}
       <section className="max-w-5xl mx-auto px-6 pb-20">
-        <div className="relative bg-white rounded-2xl border border-border shadow-sm p-8 overflow-hidden min-h-[320px] flex items-center justify-center">
+        <div className="relative bg-ocean-light rounded-2xl border border-border shadow-sm p-8 overflow-hidden min-h-[320px] flex items-center justify-center">
           <NetworkVisualization />
         </div>
       </section>
 
-      {/* Features */}
       <section className="max-w-5xl mx-auto px-6 pb-24">
-        <h2 className="font-serif text-3xl sm:text-4xl font-medium text-text text-center mb-4">
-          What your AI Chief of Staff does
+        <h2 className="font-heading text-3xl sm:text-4xl font-medium text-text text-center mb-4">
+          What Marlin does for you
         </h2>
         <div className="grid sm:grid-cols-2 gap-6 mt-12">
           {FEATURES.map((f) => (
-            <div key={f.title} className="bg-white rounded-2xl border border-border p-7">
-              <div className="w-11 h-11 rounded-xl bg-cream text-text-muted flex items-center justify-center mb-5">
+            <div key={f.title} className="bg-ocean-light rounded-2xl border border-border p-7">
+              <div className="w-11 h-11 rounded-xl bg-ocean text-text-muted flex items-center justify-center mb-5">
                 {f.icon}
               </div>
               <h3 className="font-semibold text-text mb-2 text-base">{f.title}</h3>
@@ -178,10 +178,9 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="bg-white border-y border-border">
+      <section className="bg-ocean-light border-y border-border">
         <div className="max-w-4xl mx-auto px-6 py-20">
-          <h2 className="font-serif text-3xl sm:text-4xl font-medium text-text text-center mb-14">
+          <h2 className="font-heading text-3xl sm:text-4xl font-medium text-text text-center mb-14">
             Set up in 3 minutes
           </h2>
           <div className="grid sm:grid-cols-3 gap-10 text-center">
@@ -191,7 +190,7 @@ export default function Landing() {
               { step: '3', title: 'Training scan', desc: 'Your assistant scans your email history to deeply understand your world.' },
             ].map((s) => (
               <div key={s.step}>
-                <div className="w-11 h-11 rounded-full bg-text text-white font-semibold text-sm flex items-center justify-center mx-auto mb-5">
+                <div className="w-11 h-11 rounded-full bg-electric text-white font-semibold text-sm flex items-center justify-center mx-auto mb-5">
                   {s.step}
                 </div>
                 <h3 className="font-semibold text-text mb-2">{s.title}</h3>
@@ -202,19 +201,18 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="max-w-4xl mx-auto px-6 py-24 text-center">
-        <h2 className="font-serif text-3xl sm:text-5xl font-medium text-text mb-5 leading-tight">
-          Stop managing your inbox.<br />Start delegating it.
+        <h2 className="font-heading text-3xl sm:text-5xl font-medium text-text mb-5 leading-tight">
+          Stop treading water.<br />Start swimming fast.
         </h2>
         <p className="text-text-muted mb-10 text-lg">
-          Your AI Chief of Staff is ready to start learning.
+          Marlin is ready to dive into your inbox.
         </p>
         <button
           onClick={handleSignIn}
           className="group inline-flex items-center gap-4 rounded-full pl-8 pr-2 py-2 text-base font-medium cursor-pointer transition-all"
           style={{
-            background: 'linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 70%, #f5f0e8 100%)',
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 70%, #2563eb 100%)',
             color: '#fff',
           }}
         >
@@ -227,9 +225,8 @@ export default function Landing() {
         </button>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-border px-6 py-8 text-center text-sm text-text-muted">
-        ChiefMail &middot; Lightning fast email & calendar agent
+        Marlin &middot; The fastest fish on Gmail
       </footer>
     </div>
   )
@@ -237,7 +234,7 @@ export default function Landing() {
 
 function NetworkVisualization() {
   const nodes = [
-    { id: 'you', label: 'You', x: 50, y: 50, size: 28, color: '#cd6f47' },
+    { id: 'you', label: 'You', x: 50, y: 50, size: 28, color: '#2563eb' },
     { id: 'n1', label: 'Sarah K.', x: 22, y: 25, size: 18, color: '#6366f1' },
     { id: 'n2', label: 'Mike R.', x: 78, y: 22, size: 16, color: '#8b5cf6' },
     { id: 'n3', label: 'Lisa T.', x: 15, y: 70, size: 14, color: '#06b6d4' },
@@ -270,7 +267,7 @@ function NetworkVisualization() {
             <line
               key={i}
               x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-              stroke="#e5e5e0" strokeWidth="0.3" opacity="0.6"
+              stroke="#334155" strokeWidth="0.3" opacity="0.6"
             />
           )
         })}
@@ -286,15 +283,15 @@ function NetworkVisualization() {
             />
             <text
               x={n.x} y={n.y + n.size / 10 + 2.5}
-              textAnchor="middle" fontSize="2.2" fill="#6b7280" fontWeight="500"
+              textAnchor="middle" fontSize="2.2" fill="#94a3b8" fontWeight="500"
             >
               {n.label}
             </text>
           </g>
         ))}
       </svg>
-      <div className="absolute bottom-4 left-4 text-xs text-text-muted bg-cream/80 backdrop-blur px-3 py-1.5 rounded-full">
-        Your AI-mapped contact network
+      <div className="absolute bottom-4 left-4 text-xs text-text-muted bg-ocean/80 backdrop-blur px-3 py-1.5 rounded-full">
+        Your AI-mapped ocean of contacts
       </div>
     </div>
   )

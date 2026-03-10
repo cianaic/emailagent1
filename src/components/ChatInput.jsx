@@ -15,7 +15,7 @@ function ChatInput({ onSend, disabled }) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="sticky bottom-0 border-t border-border bg-cream px-4 py-3"
+      className="sticky bottom-0 border-t border-border bg-ocean px-4 py-3"
     >
       <div className="mx-auto flex max-w-3xl items-center gap-2">
         <input
@@ -25,7 +25,7 @@ function ChatInput({ onSend, disabled }) {
           placeholder="Type your message..."
           maxLength={2000}
           disabled={disabled}
-          className="flex-1 rounded-full border border-border bg-white px-4 py-2.5 text-sm text-text placeholder:text-text-muted focus:outline-2 focus:outline-coral disabled:opacity-50"
+          className="flex-1 rounded-full border border-border bg-ocean-light px-4 py-2.5 text-sm text-text placeholder:text-text-muted focus:outline-2 focus:outline-electric disabled:opacity-50"
         />
         <Button
           type="submit"

@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/authContext'
 
 const ASSISTANTS = [
-  { name: 'Sage', tagline: 'Wise and helpful', emoji: '🧙', bg: 'bg-amber-100', color: 'text-amber-700' },
-  { name: 'Nova', tagline: 'Bright and innovative', emoji: '✨', bg: 'bg-purple-100', color: 'text-purple-700' },
-  { name: 'Echo', tagline: 'Always in sync', emoji: '🔮', bg: 'bg-cyan-100', color: 'text-cyan-700' },
-  { name: 'Atlas', tagline: 'Carries your workload', emoji: '🌍', bg: 'bg-emerald-100', color: 'text-emerald-700' },
-  { name: 'Pixel', tagline: 'Small but mighty', emoji: '⚡', bg: 'bg-red-100', color: 'text-red-700' },
-  { name: 'Iris', tagline: 'Clear vision ahead', emoji: '👁', bg: 'bg-indigo-100', color: 'text-indigo-700' },
+  { name: 'Sage', tagline: 'Wise and helpful', emoji: '🧙', bg: 'bg-amber-900/30', color: 'text-amber-400' },
+  { name: 'Nova', tagline: 'Bright and innovative', emoji: '✨', bg: 'bg-purple-900/30', color: 'text-purple-400' },
+  { name: 'Echo', tagline: 'Always in sync', emoji: '🔮', bg: 'bg-cyan-900/30', color: 'text-cyan-400' },
+  { name: 'Atlas', tagline: 'Carries your workload', emoji: '🌍', bg: 'bg-emerald-900/30', color: 'text-emerald-400' },
+  { name: 'Pixel', tagline: 'Small but mighty', emoji: '⚡', bg: 'bg-red-900/30', color: 'text-red-400' },
+  { name: 'Iris', tagline: 'Clear vision ahead', emoji: '👁', bg: 'bg-indigo-900/30', color: 'text-indigo-400' },
 ]
 
 const PERSONALITIES = [
@@ -32,7 +32,7 @@ const SCAN_STEPS = [
 export default function Onboarding() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
-  const [step, setStep] = useState(0) // 0: welcome, 1: assistant setup, 2: scanning
+  const [step, setStep] = useState(0)
 
   useEffect(() => {
     if (!loading && !user) navigate('/')
@@ -40,18 +40,17 @@ export default function Onboarding() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-coral border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-ocean flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-electric border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-cream">
-      {/* Progress bar */}
+    <div className="min-h-screen bg-ocean">
       <div className="fixed top-0 left-0 right-0 h-1 bg-border z-50">
         <div
-          className="h-full bg-coral transition-all duration-500 ease-out"
+          className="h-full bg-electric transition-all duration-500 ease-out"
           style={{ width: `${((step + 1) / 3) * 100}%` }}
         />
       </div>
@@ -68,7 +67,7 @@ export default function Onboarding() {
 function WelcomeStep({ user, onNext }) {
   return (
     <div className="text-center pt-12">
-      <div className="w-16 h-16 rounded-2xl bg-coral flex items-center justify-center mx-auto mb-8">
+      <div className="w-16 h-16 rounded-2xl bg-electric flex items-center justify-center mx-auto mb-8">
         <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
         </svg>
@@ -81,10 +80,10 @@ function WelcomeStep({ user, onNext }) {
         {user?.email}
       </p>
       <p className="text-text-muted max-w-md mx-auto mb-10 leading-relaxed">
-        Let's set up your AI Chief of Staff. This will take about 2 minutes — then your assistant will begin a deep training scan of your email history.
+        Let's set up Marlin, your AI email assistant. This will take about 2 minutes — then your assistant will begin a deep training scan of your email history.
       </p>
 
-      <div className="bg-white rounded-xl border border-border p-6 text-left max-w-md mx-auto mb-10">
+      <div className="bg-ocean-light rounded-xl border border-border p-6 text-left max-w-md mx-auto mb-10">
         <h3 className="font-semibold text-text mb-4">What happens next</h3>
         <div className="space-y-4">
           {[
@@ -93,7 +92,7 @@ function WelcomeStep({ user, onNext }) {
             { num: '3', text: 'A rich contact intelligence map is built for you' },
           ].map((item) => (
             <div key={item.num} className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-coral/10 text-coral text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-6 h-6 rounded-full bg-electric/10 text-electric text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
                 {item.num}
               </div>
               <span className="text-sm text-text">{item.text}</span>
@@ -104,7 +103,7 @@ function WelcomeStep({ user, onNext }) {
 
       <button
         onClick={onNext}
-        className="bg-coral text-white rounded-full px-8 py-3 font-medium hover:bg-coral-dark transition-colors cursor-pointer"
+        className="bg-electric text-white rounded-full px-8 py-3 font-medium hover:bg-electric-dark transition-colors cursor-pointer"
       >
         Let's get started
       </button>
@@ -146,7 +145,6 @@ function AssistantSetupStep({ onNext, onBack }) {
       <h1 className="text-3xl font-bold text-text mb-2">Set up your assistant</h1>
       <p className="text-text-muted mb-10">Choose a name and personality that fits your style</p>
 
-      {/* Name selection */}
       <div className="mb-8">
         <label className="block text-sm font-semibold text-text mb-4">Name</label>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-6">
@@ -156,8 +154,8 @@ function AssistantSetupStep({ onNext, onBack }) {
               onClick={() => { setSelectedAssistant(i); setCustomName('') }}
               className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all cursor-pointer ${
                 selectedAssistant === i && !customName
-                  ? 'border-coral bg-coral/5 shadow-sm'
-                  : 'border-border bg-white hover:border-coral/30'
+                  ? 'border-electric bg-electric/5 shadow-sm'
+                  : 'border-border bg-ocean-light hover:border-electric/30'
               }`}
             >
               <div className={`w-12 h-12 rounded-full ${a.bg} ${a.color} flex items-center justify-center text-xl`}>
@@ -180,11 +178,10 @@ function AssistantSetupStep({ onNext, onBack }) {
           placeholder="Enter custom name..."
           value={customName}
           onChange={(e) => { setCustomName(e.target.value); if (e.target.value) setSelectedAssistant(null) }}
-          className="w-full sm:w-80 h-11 rounded-xl border border-border bg-white px-4 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-coral transition-colors"
+          className="w-full sm:w-80 h-11 rounded-xl border border-border bg-ocean-light px-4 text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-electric transition-colors"
         />
       </div>
 
-      {/* Personality selection */}
       <div className="mb-10">
         <label className="block text-sm font-semibold text-text mb-4">Personality</label>
         <div className="space-y-3">
@@ -194,16 +191,16 @@ function AssistantSetupStep({ onNext, onBack }) {
               onClick={() => setPersonality(p.id)}
               className={`w-full text-left p-4 rounded-xl border transition-all cursor-pointer ${
                 personality === p.id
-                  ? 'border-coral bg-coral/5 shadow-sm'
-                  : 'border-border bg-white hover:border-coral/30'
+                  ? 'border-electric bg-electric/5 shadow-sm'
+                  : 'border-border bg-ocean-light hover:border-electric/30'
               }`}
             >
               <div className="flex items-center gap-3">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                  personality === p.id ? 'border-coral' : 'border-gray-300'
+                  personality === p.id ? 'border-electric' : 'border-gray-600'
                 }`}>
                   {personality === p.id && (
-                    <div className="w-2.5 h-2.5 rounded-full bg-coral" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-electric" />
                   )}
                 </div>
                 <div>
@@ -216,12 +213,11 @@ function AssistantSetupStep({ onNext, onBack }) {
         </div>
       </div>
 
-      {/* Continue */}
       <div className="flex items-center gap-4">
         <button
           onClick={handleSave}
           disabled={!canContinue}
-          className="bg-coral text-white rounded-full px-8 py-3 font-medium hover:bg-coral-dark transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          className="bg-electric text-white rounded-full px-8 py-3 font-medium hover:bg-electric-dark transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Continue
         </button>
@@ -271,13 +267,13 @@ function ScanningStep({ onComplete }) {
 
   return (
     <div className="text-center pt-8">
-      <div className="w-16 h-16 rounded-2xl bg-coral/10 text-coral flex items-center justify-center mx-auto mb-8 text-3xl">
+      <div className="w-16 h-16 rounded-2xl bg-electric/10 text-electric flex items-center justify-center mx-auto mb-8 text-3xl">
         {done ? (
           <svg className="w-9 h-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
           </svg>
         ) : (
-          <div className="w-9 h-9 border-3 border-coral border-t-transparent rounded-full animate-spin" />
+          <div className="w-9 h-9 border-3 border-electric border-t-transparent rounded-full animate-spin" />
         )}
       </div>
 
@@ -292,7 +288,6 @@ function ScanningStep({ onComplete }) {
         }
       </p>
 
-      {/* Progress */}
       <div className="max-w-md mx-auto mb-8">
         <div className="flex items-center justify-between text-sm mb-2">
           <span className="text-text-muted">Training scan</span>
@@ -302,19 +297,18 @@ function ScanningStep({ onComplete }) {
         </div>
         <div className="h-2 bg-border rounded-full overflow-hidden">
           <div
-            className="h-full bg-coral rounded-full transition-all duration-1000 ease-out"
+            className="h-full bg-electric rounded-full transition-all duration-1000 ease-out"
             style={{ width: done ? '100%' : `${((currentStep + 1) / SCAN_STEPS.length) * 100}%` }}
           />
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto mb-8">
-        <div className="bg-white rounded-xl border border-border p-4">
+        <div className="bg-ocean-light rounded-xl border border-border p-4">
           <div className="text-2xl font-bold text-text">{contactCount.toLocaleString()}</div>
           <div className="text-xs text-text-muted mt-1">Contacts analyzed</div>
         </div>
-        <div className="bg-white rounded-xl border border-border p-4">
+        <div className="bg-ocean-light rounded-xl border border-border p-4">
           <div className="text-2xl font-bold text-text">
             {Math.floor(contactCount * 12.3).toLocaleString()}
           </div>
@@ -322,8 +316,7 @@ function ScanningStep({ onComplete }) {
         </div>
       </div>
 
-      {/* Scan log */}
-      <div className="max-w-md mx-auto bg-white rounded-xl border border-border p-4 text-left mb-10">
+      <div className="max-w-md mx-auto bg-ocean-light rounded-xl border border-border p-4 text-left mb-10">
         <div className="space-y-2.5">
           {SCAN_STEPS.map((s, i) => (
             <div
@@ -333,12 +326,12 @@ function ScanningStep({ onComplete }) {
               }`}
             >
               {i < currentStep ? (
-                <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                 </svg>
               ) : i === currentStep ? (
                 <div className="w-4 h-4 flex-shrink-0 flex items-center justify-center">
-                  <div className="w-2 h-2 rounded-full bg-coral animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-electric animate-pulse" />
                 </div>
               ) : (
                 <div className="w-4 h-4 flex-shrink-0" />
@@ -352,7 +345,7 @@ function ScanningStep({ onComplete }) {
       {done && (
         <button
           onClick={onComplete}
-          className="bg-coral text-white rounded-full px-8 py-3 font-medium hover:bg-coral-dark transition-colors cursor-pointer animate-fade-in"
+          className="bg-electric text-white rounded-full px-8 py-3 font-medium hover:bg-electric-dark transition-colors cursor-pointer animate-fade-in"
         >
           Start using {assistantName}
         </button>

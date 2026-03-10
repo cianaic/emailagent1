@@ -19,7 +19,7 @@ export async function sendChatMessage(messages) {
     if (err.message === 'Failed to fetch' || err.message.includes('NetworkError')) {
       console.warn('Chat API unavailable, using fallback response')
       return {
-        text: "I'm your Email Agent assistant. I can help you find contacts and draft personalized emails. Try asking me to find contacts by role, company, or industry — for example, \"find marketing managers\" or \"who works at Acme Corp?\"",
+        text: "I'm Marlin, your AI email assistant. I can help you find contacts and draft personalized emails at lightning speed. Try asking me to find contacts by role, company, or industry — for example, \"find marketing managers\" or \"who works at Acme Corp?\"",
         toolUse: null,
       }
     }

@@ -1,9 +1,9 @@
 import { forwardRef } from 'react'
 
 const variants = {
-  default: 'bg-coral text-white hover:bg-coral-dark',
-  outline: 'border border-border bg-white text-text hover:bg-cream',
-  ghost: 'text-text hover:bg-cream',
+  default: 'bg-electric text-white hover:bg-electric-dark',
+  outline: 'border border-border bg-ocean-light text-text hover:bg-ocean',
+  ghost: 'text-text hover:bg-ocean',
 }
 
 const sizes = {
@@ -17,7 +17,7 @@ const Button = forwardRef(({ className = '', variant = 'default', size = 'defaul
   return (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-coral disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-electric disabled:pointer-events-none disabled:opacity-50 cursor-pointer ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     />
   )

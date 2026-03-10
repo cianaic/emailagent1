@@ -307,18 +307,18 @@ function Chat() {
       />
 
       <div className="flex flex-1 flex-col">
-        <header className="border-b border-border bg-white px-4 py-3">
+        <header className="border-b border-border bg-ocean-light px-4 py-3">
           <div className="mx-auto flex max-w-3xl items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="rounded p-1 text-text-muted hover:bg-cream md:hidden"
+              className="rounded p-1 text-text-muted hover:bg-ocean md:hidden"
               aria-label="Open sidebar"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
                 <path d="M3 12h18M3 6h18M3 18h18" />
               </svg>
             </button>
-            <h1 className="text-lg font-semibold text-text">Email Agent</h1>
+            <h1 className="text-lg font-semibold text-text">Marlin</h1>
             <div className="ml-auto flex items-center gap-3">
               <CSVUpload onUpload={setContactCount} />
               <GmailStatus

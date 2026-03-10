@@ -17,7 +17,7 @@ function ContactCard({ contact, removed, onToggle }) {
             {contact.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-coral/10 px-2 py-0.5 text-xs text-coral-dark"
+                className="rounded-full bg-electric/10 px-2 py-0.5 text-xs text-electric-light"
               >
                 {tag}
               </span>
@@ -28,8 +28,8 @@ function ContactCard({ contact, removed, onToggle }) {
           onClick={() => onToggle(contact.id)}
           className={`shrink-0 cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
             removed
-              ? 'bg-cream text-text-muted hover:bg-coral/10 hover:text-coral-dark'
-              : 'bg-coral/10 text-coral-dark hover:bg-red-100 hover:text-red-600'
+              ? 'bg-ocean text-text-muted hover:bg-electric/10 hover:text-electric-light'
+              : 'bg-electric/10 text-electric-light hover:bg-red-900/30 hover:text-red-400'
           }`}
         >
           {removed ? 'Keep' : 'Remove'}

@@ -24,10 +24,9 @@ function MessageList({
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
         {messages.length === 0 && !thinking && (
           <div className="flex flex-col items-center justify-center py-20 text-center text-text-muted">
-            <p className="text-lg font-medium">Welcome to Email Agent</p>
+            <p className="text-lg font-medium">Welcome to Marlin</p>
             <p className="mt-1 text-sm">
-              Tell me who you'd like to reach out to and I'll help craft
-              personalized emails.
+              Tell me who you'd like to reach out to — I'll navigate your contacts and draft personalized emails at lightning speed.
             </p>
           </div>
         )}
