@@ -33,7 +33,7 @@ export function AuthProvider({ children }) {
 
   async function signInWithGoogle() {
     if (!supabaseConfigured) {
-      throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.')
+      throw new Error('Supabase is not configured. Please set VITE_SUPABASE_URL and either VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY in your .env file.')
     }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
