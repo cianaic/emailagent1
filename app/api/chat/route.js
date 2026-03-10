@@ -36,7 +36,14 @@ export async function POST(request) {
     return NextResponse.json({ error: 'API key not configured' }, { status: 500 })
   }
 
-  const { messages } = await request.json()
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 })
+  }
+
+  const { messages } = body
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return NextResponse.json({ error: 'Missing or invalid messages array' }, { status: 400 })
   }

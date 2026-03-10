@@ -12,7 +12,14 @@ export async function POST(request) {
   }
   const accessToken = authHeader.slice(7)
 
-  const { to, subject, body, fromName } = await request.json()
+  let parsed
+  try {
+    parsed = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 })
+  }
+
+  const { to, subject, body, fromName } = parsed
   if (!to || !subject || !body) {
     return NextResponse.json({ error: 'Missing to, subject, or body' }, { status: 400 })
   }
