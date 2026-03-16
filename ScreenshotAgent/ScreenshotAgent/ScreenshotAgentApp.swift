@@ -14,6 +14,20 @@ struct ScreenshotAgentApp: App {
 
             Divider()
 
+            Toggle("Watch for Screenshots", isOn: Binding(
+                get: { appDelegate.screenshotMonitor.isRunning },
+                set: { enabled in
+                    if enabled {
+                        appDelegate.screenshotMonitor.start()
+                    } else {
+                        appDelegate.screenshotMonitor.stop()
+                    }
+                    UserDefaults.standard.set(enabled, forKey: "watchScreenshots")
+                }
+            ))
+
+            Divider()
+
             Button("Settings...") {
                 appDelegate.showSettings()
             }
@@ -30,11 +44,24 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     var capturePopup: NSWindow?
     var capturedImage: NSImage?
     var hotKeyRef: EventHotKeyRef?
+    let screenshotMonitor = ScreenshotMonitor()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
         registerGlobalHotKey()
+
+        // Wire up the FSEvents monitor: native screenshots show the same popup
+        screenshotMonitor.onScreenshotDetected = { [weak self] image in
+            self?.capturedImage = image
+            self?.showCapturePopup(image: image)
+        }
+
+        // Auto-start if previously enabled (defaults to true on first launch)
+        let watchEnabled = UserDefaults.standard.object(forKey: "watchScreenshots") as? Bool ?? true
+        if watchEnabled {
+            screenshotMonitor.start()
+        }
     }
 
     // MARK: - Global Hotkey (Cmd+Shift+A)
