@@ -46,9 +46,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     var hotKeyRef: EventHotKeyRef?
     let screenshotMonitor = ScreenshotMonitor()
 
+    private var hasBundle: Bool {
+        Bundle.main.bundleIdentifier != nil
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-        UNUserNotificationCenter.current().delegate = self
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        if hasBundle {
+            UNUserNotificationCenter.current().delegate = self
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        }
         registerGlobalHotKey()
 
         // Wire up the FSEvents monitor: native screenshots show the same popup
@@ -218,6 +224,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     // MARK: - Notifications
 
     func showNotification(title: String, body: String, url: String?) {
+        guard hasBundle else {
+            // Fallback when running as bare executable (no .app bundle)
+            print("[\(title)] \(body)")
+            if let urlString = url, let url = URL(string: urlString) {
+                NSWorkspace.shared.open(url)
+            }
+            return
+        }
+
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
