@@ -6,8 +6,11 @@ import CSVUpload from '../components/CSVUpload'
 import GmailStatus from '../components/GmailStatus'
 import { loadChats, saveChats, createChat, deriveTitle } from '../lib/chatStore'
 import { searchContacts } from '../lib/contacts'
-import { sendChatMessage, generateAllDrafts } from '../lib/claude'
+import { sendChatMessage, generateAllDrafts, analyzeScreenshot } from '../lib/claude'
 import { sendAllEmails } from '../lib/gmail'
+import { sendEmail } from '../lib/gmail'
+import { createCalendarEvent } from '../lib/calendar'
+import { getAllContacts } from '../lib/contacts'
 import { useAuth } from '../lib/authContext'
 
 function Chat() {
@@ -27,6 +30,8 @@ function Chat() {
   const [emailDrafts, setEmailDrafts] = useState([])
   const [isDrafting, setIsDrafting] = useState(false)
   const [, setContactCount] = useState(null)
+  const [screenshotActions, setScreenshotActions] = useState(null)
+  const [screenshotConfirmedIds, setScreenshotConfirmedIds] = useState(new Set())
 
   // Persist chats to LocalStorage whenever they change
   useEffect(() => {
@@ -125,12 +130,17 @@ function Chat() {
   // --- Main send handler ---
 
   const handleSend = useCallback(
-    async (text) => {
+    async (input) => {
+      // Support both old string format and new {text, image} format
+      const text = typeof input === 'string' ? input : input.text
+      const image = typeof input === 'string' ? null : input.image
+
       const userMsg = {
         id: crypto.randomUUID(),
         role: 'user',
-        content: text,
+        content: text || (image ? 'Analyze this screenshot' : ''),
         timestamp: Date.now(),
+        ...(image ? { image } : {}),
       }
 
       setChats((prev) =>
@@ -149,56 +159,83 @@ function Chat() {
       setThinking(true)
 
       try {
-        // Build message history for Claude API
-        const currentChat = chats.find((c) => c.id === activeChatId)
-        const allMessages = [...(currentChat?.messages || []), userMsg]
-        const apiMessages = allMessages
-          .filter((m) => m.role === 'user' || (m.role === 'agent' && !m.type))
-          .map((m) => ({
-            role: m.role === 'user' ? 'user' : 'assistant',
-            content: m.content,
-          }))
+        // Screenshot flow: use vision agent
+        if (image) {
+          addAgentMessage('Analyzing your screenshot...')
+          const contacts = getAllContacts()
+          const result = await analyzeScreenshot(image, text, contacts)
 
-        const response = await sendChatMessage(apiMessages)
+          const totalCards = (result.cards?.emails?.length || 0) + (result.cards?.calendar?.length || 0)
+          if (totalCards > 0) {
+            setScreenshotActions(result.cards)
+            setScreenshotConfirmedIds(new Set())
 
-        // If Claude wants to search contacts via tool_use
-        if (response.toolUse?.name === 'search_contacts') {
-          const query = response.toolUse.input.query
-          const results = searchContacts(query)
-
-          // Show Claude's text first if it has any
-          if (response.text) {
-            addAgentMessage(response.text)
-          }
-
-          if (results.length > 0) {
-            const contactsMsg = {
+            const actionMsg = {
               id: crypto.randomUUID(),
               role: 'agent',
-              type: 'contacts',
-              content: `I found **${results.length} contact${results.length !== 1 ? 's' : ''}** matching your request. Review them below — you can remove anyone who isn't a good fit, then continue.`,
-              contacts: results,
-              confirmed: false,
+              type: 'screenshot-action',
+              content: result.summary,
               timestamp: Date.now(),
             }
             setChats((prev) =>
               prev.map((chat) => {
                 if (chat.id !== activeChatId) return chat
-                return {
-                  ...chat,
-                  messages: [...chat.messages, contactsMsg],
-                  updatedAt: Date.now(),
-                }
+                return { ...chat, messages: [...chat.messages, actionMsg], updatedAt: Date.now() }
               })
             )
           } else {
-            addAgentMessage(
-              `I searched for **"${query}"** but couldn't find any matching contacts. Try different terms like role, company, industry, or location. You can also **upload a CSV** with your contacts using the button in the header.`
-            )
+            addAgentMessage(result.summary || 'I analyzed the screenshot but couldn\'t determine any specific actions to take. Try adding more context about what you\'d like to do.')
           }
-        } else if (response.text) {
-          // Pure conversational response
-          addAgentMessage(response.text)
+        } else {
+          // Regular chat flow
+          const currentChat = chats.find((c) => c.id === activeChatId)
+          const allMessages = [...(currentChat?.messages || []), userMsg]
+          // Strip images from history to avoid huge payloads
+          const apiMessages = allMessages
+            .filter((m) => m.role === 'user' || (m.role === 'agent' && !m.type))
+            .map((m) => ({
+              role: m.role === 'user' ? 'user' : 'assistant',
+              content: m.content,
+            }))
+
+          const response = await sendChatMessage(apiMessages)
+
+          if (response.toolUse?.name === 'search_contacts') {
+            const query = response.toolUse.input.query
+            const results = searchContacts(query)
+
+            if (response.text) {
+              addAgentMessage(response.text)
+            }
+
+            if (results.length > 0) {
+              const contactsMsg = {
+                id: crypto.randomUUID(),
+                role: 'agent',
+                type: 'contacts',
+                content: `I found **${results.length} contact${results.length !== 1 ? 's' : ''}** matching your request. Review them below — you can remove anyone who isn't a good fit, then continue.`,
+                contacts: results,
+                confirmed: false,
+                timestamp: Date.now(),
+              }
+              setChats((prev) =>
+                prev.map((chat) => {
+                  if (chat.id !== activeChatId) return chat
+                  return {
+                    ...chat,
+                    messages: [...chat.messages, contactsMsg],
+                    updatedAt: Date.now(),
+                  }
+                })
+              )
+            } else {
+              addAgentMessage(
+                `I searched for **"${query}"** but couldn't find any matching contacts. Try different terms like role, company, industry, or location. You can also **upload a CSV** with your contacts using the button in the header.`
+              )
+            }
+          } else if (response.text) {
+            addAgentMessage(response.text)
+          }
         }
       } catch (err) {
         addAgentMessage(
@@ -210,6 +247,81 @@ function Chat() {
     },
     [activeChatId, chats, addAgentMessage]
   )
+
+  // --- Screenshot action handlers ---
+
+  const handleUpdateScreenshotCard = useCallback((id, updates) => {
+    setScreenshotActions((prev) => {
+      if (!prev) return prev
+      return {
+        emails: prev.emails.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+        calendar: prev.calendar.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+      }
+    })
+  }, [])
+
+  const handleConfirmScreenshotCard = useCallback((id) => {
+    setScreenshotConfirmedIds((prev) => new Set([...prev, id]))
+  }, [])
+
+  const handleConfirmAllScreenshot = useCallback(async () => {
+    if (!screenshotActions) return
+
+    const allIds = [
+      ...screenshotActions.emails.map((c) => c.id),
+      ...screenshotActions.calendar.map((c) => c.id),
+    ]
+    const allConfirmed = allIds.every((id) => screenshotConfirmedIds.has(id))
+
+    if (!allConfirmed) {
+      setScreenshotConfirmedIds(new Set(allIds))
+      return
+    }
+
+    if (!gmailConnected || !providerToken) {
+      addAgentMessage('Your session has expired. Please sign out and sign in again.')
+      return
+    }
+
+    setThinking(true)
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const results = []
+
+    for (const email of screenshotActions.emails) {
+      try {
+        await sendEmail({ to: email.to, subject: email.subject, body: email.body, providerToken })
+        results.push({ label: `Email to ${email.to}`, success: true })
+      } catch (err) {
+        results.push({ label: `Email to ${email.to}`, success: false, error: err.message })
+      }
+    }
+
+    for (const cal of screenshotActions.calendar) {
+      try {
+        await createCalendarEvent({ ...cal, timeZone, providerToken })
+        results.push({ label: `Calendar: ${cal.title}`, success: true })
+      } catch (err) {
+        results.push({ label: `Calendar: ${cal.title}`, success: false, error: err.message })
+      }
+    }
+
+    const succeeded = results.filter((r) => r.success)
+    const failed = results.filter((r) => !r.success)
+    let summary = `Completed **${succeeded.length}/${results.length}** actions.`
+    if (succeeded.length > 0) summary += `\n\nSuccess: ${succeeded.map((r) => r.label).join(', ')}`
+    if (failed.length > 0) summary += `\n\nFailed: ${failed.map((r) => `${r.label} (${r.error})`).join(', ')}`
+
+    addAgentMessage(summary)
+    setScreenshotActions(null)
+    setScreenshotConfirmedIds(new Set())
+    setThinking(false)
+  }, [screenshotActions, screenshotConfirmedIds, gmailConnected, providerToken, addAgentMessage])
+
+  const handleCancelScreenshot = useCallback(() => {
+    setScreenshotActions(null)
+    setScreenshotConfirmedIds(new Set())
+    addAgentMessage('Screenshot actions cancelled.')
+  }, [addAgentMessage])
 
   // --- Contact confirmation → AI email drafting ---
 
@@ -336,6 +448,12 @@ function Chat() {
           onUpdateDraft={handleUpdateDraft}
           onConfirmDraft={handleConfirmDraft}
           onSendAll={handleSendAll}
+          screenshotActions={screenshotActions}
+          onUpdateScreenshotCard={handleUpdateScreenshotCard}
+          onConfirmScreenshotCard={handleConfirmScreenshotCard}
+          onConfirmAllScreenshot={handleConfirmAllScreenshot}
+          onCancelScreenshot={handleCancelScreenshot}
+          screenshotConfirmedIds={screenshotConfirmedIds}
         />
         <ChatInput onSend={handleSend} disabled={thinking || isDrafting} />
       </div>

@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './lib/authContext'
 import Landing from './pages/Landing'
 import Onboarding from './pages/Onboarding'
 import Chat from './pages/Chat'
+import Action from './pages/Action'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -24,6 +25,7 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+          <Route path="/action" element={<ProtectedRoute><Action /></ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

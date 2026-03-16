@@ -17,9 +17,16 @@ function MessageBubble({ message }) {
             : 'bg-white text-text shadow-sm border border-border'
         }`}
       >
+        {isUser && message.image && (
+          <img
+            src={message.image}
+            alt="Screenshot"
+            className="mb-2 max-w-full rounded-lg"
+          />
+        )}
         <div className="prose prose-sm max-w-none [&_p]:m-0">
           {isUser ? (
-            <p>{message.content}</p>
+            message.content ? <p>{message.content}</p> : null
           ) : (
             <ReactMarkdown>{message.content}</ReactMarkdown>
           )}

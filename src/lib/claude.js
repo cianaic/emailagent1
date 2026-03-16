@@ -75,6 +75,35 @@ export async function generateAllDrafts(contacts, outreachContext, onProgress) {
   return drafts
 }
 
+// Calls the server-side /api/screenshot endpoint for screenshot analysis.
+// Returns { cards: { emails: [...], calendar: [...] }, summary: "..." }
+
+export async function analyzeScreenshot(image, text, contacts) {
+  try {
+    const response = await fetch('/api/screenshot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image, text, contacts }),
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.error || 'Screenshot analysis unavailable')
+    }
+
+    return await response.json()
+  } catch (err) {
+    if (err.message === 'Failed to fetch' || err.message.includes('NetworkError')) {
+      console.warn('Screenshot API unavailable')
+      return {
+        cards: { emails: [], calendar: [] },
+        summary: 'Screenshot analysis is currently unavailable. Please try again.',
+      }
+    }
+    throw err
+  }
+}
+
 // --- Fallback mock helpers (used when API is unreachable) ---
 
 function fakeDelay(ms) {
