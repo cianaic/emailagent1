@@ -3,6 +3,7 @@ import MessageBubble from './MessageBubble'
 import ThinkingIndicator from './ThinkingIndicator'
 import ContactListMessage from './ContactListMessage'
 import EmailDraftList from './EmailDraftList'
+import ActionPreviewCard from './ActionPreviewCard'
 
 function MessageList({
   messages,
@@ -12,6 +13,12 @@ function MessageList({
   onUpdateDraft,
   onConfirmDraft,
   onSendAll,
+  screenshotActions,
+  onUpdateScreenshotCard,
+  onConfirmScreenshotCard,
+  onConfirmAllScreenshot,
+  onCancelScreenshot,
+  screenshotConfirmedIds,
 }) {
   const bottomRef = useRef(null)
 
@@ -52,6 +59,21 @@ function MessageList({
                 onConfirmDraft={onConfirmDraft}
                 onSendAll={onSendAll}
               />
+            )
+          }
+          if (msg.type === 'screenshot-action' && screenshotActions) {
+            return (
+              <div key={msg.id} className="flex flex-col gap-2">
+                <ActionPreviewCard
+                  cards={screenshotActions}
+                  summary={msg.content}
+                  confirmedIds={screenshotConfirmedIds}
+                  onUpdateCard={onUpdateScreenshotCard}
+                  onConfirmCard={onConfirmScreenshotCard}
+                  onConfirmAll={onConfirmAllScreenshot}
+                  onCancel={onCancelScreenshot}
+                />
+              </div>
             )
           }
           return <MessageBubble key={msg.id} message={msg} />
